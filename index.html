@@ -1,0 +1,993 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Estimation interactive de ce que la France et l'Union européenne versent chaque année aux fournisseurs numériques extra-européens : cloud, SaaS, IA, puces, par société et par produit.">
+<title>Compteur de dépendance numérique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Libre+Franklin:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : un dossier long en chapitres, barre de réglages collante, bande « bleu Europe » pour le compteur ; les étoiles du drapeau servent de jauge (10 sur 12 = 83 %). */
+:root{
+  --paper:#F1F3F8; --surface:#FFFFFF; --ink:#0F1733; --muted:#56607C; --line:#D6DBE7; --soft:#E6EAF3;
+  --band:#15318F; --band-2:#0E2368; --band-ink:#F3F5FF; --band-muted:#B9C3EC;
+  --gold:#F2B705; --gold-ink:#8A6200;
+  --us:#C8382A; --eu:#1F45C4; --ch:#0E8C8C; --libre:#2E8B57; --other:#6B7489;
+  --c-iaas:#2F5BEA; --c-paas:#0B8F9B; --c-saas:#7343D2; --c-lic:#B94E14; --c-ia:#C42A66;
+  --c-puces:#2C8454; --c-mat:#7E5F44; --c-pub:#A87700; --c-gp:#56647E; --c-lt:#8C93A6;
+  --tile-ink:#FFFFFF;
+  --f-display:"Big Shoulders Display","Oswald","Arial Narrow",Impact,sans-serif;
+  --f-body:"Libre Franklin","Segoe UI",system-ui,-apple-system,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0A1022; --surface:#111a33; --ink:#E7EBF6; --muted:#9AA4C1; --line:#25304F; --soft:#18223F;
+  --band:#0F2266; --band-2:#0A1847; --band-ink:#F3F5FF; --band-muted:#A9B5E6;
+  --gold:#F5C230; --gold-ink:#F5C230;
+  --us:#F0705F; --eu:#7A98FF; --ch:#3CC2C2; --libre:#5CC98A; --other:#98A1B6;
+  --c-iaas:#7391FF; --c-paas:#3CC6D1; --c-saas:#A98CF2; --c-lic:#F08A4B; --c-ia:#F26C9F;
+  --c-puces:#62CC90; --c-mat:#C9A584; --c-pub:#F2C03A; --c-gp:#9AA8C2; --c-lt:#6E7790;
+  --tile-ink:#0A1022; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#0A1022; --surface:#111a33; --ink:#E7EBF6; --muted:#9AA4C1; --line:#25304F; --soft:#18223F;
+  --band:#0F2266; --band-2:#0A1847; --band-ink:#F3F5FF; --band-muted:#A9B5E6;
+  --gold:#F5C230; --gold-ink:#F5C230;
+  --us:#F0705F; --eu:#7A98FF; --ch:#3CC2C2; --libre:#5CC98A; --other:#98A1B6;
+  --c-iaas:#7391FF; --c-paas:#3CC6D1; --c-saas:#A98CF2; --c-lic:#F08A4B; --c-ia:#F26C9F;
+  --c-puces:#62CC90; --c-mat:#C9A584; --c-pub:#F2C03A; --c-gp:#9AA8C2; --c-lt:#6E7790;
+  --tile-ink:#0A1022; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:800;line-height:1.02;letter-spacing:.005em;text-wrap:balance;margin:0}
+h2{font-size:clamp(34px,5vw,54px);text-transform:uppercase}
+h3{font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lede{max-width:66ch;color:var(--muted);font-size:17px}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+a{color:var(--eu)}
+.small{font-size:13px;color:var(--muted)}
+
+/* barre */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding-block:10px}
+.brand{font-family:var(--f-display);font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:.02em;display:flex;align-items:center;gap:8px;margin-right:auto}
+.brand svg{width:26px;height:26px}
+.ctrls{display:flex;flex-wrap:wrap;gap:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--paper)}
+.seg button{border:0;background:transparent;padding:5px 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.nav{border-top:1px solid var(--line)}
+.nav .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:6px;scrollbar-width:none}
+.nav a{white-space:nowrap;text-decoration:none;color:var(--muted);font-size:13px;font-weight:600;padding:4px 10px;border-radius:4px}
+.nav a:hover{background:var(--soft);color:var(--ink)}
+
+/* hero */
+.hero{background:var(--band);color:var(--band-ink);position:relative;overflow:hidden}
+.hero .wrap{padding-block:40px 34px;display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:28px;align-items:start}
+.hero .eyebrow{color:var(--band-muted)}
+.hero-line{font-size:18px;max-width:58ch;color:var(--band-muted);margin-top:10px}
+.hero-line strong{color:var(--band-ink)}
+.counter{font-family:var(--f-display);font-weight:800;font-size:clamp(40px,9vw,112px);line-height:.95;color:var(--gold);font-variant-numeric:tabular-nums;margin-top:8px;word-break:break-word}
+.counter small{font-size:.42em;margin-left:.15em}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.18);border-radius:var(--r);overflow:hidden;margin-top:26px}
+.trio div{background:var(--band-2);padding:12px 14px}
+.trio b{display:block;font-family:var(--f-display);font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--band-ink)}
+.trio span{font-size:12px;color:var(--band-muted);font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase}
+.stars{text-align:center}
+.stars svg{width:100%;max-width:200px;height:auto}
+.stars p{font-size:13px;color:var(--band-muted);margin-top:6px}
+.stars p b{color:var(--gold)}
+
+/* sections */
+.sec{padding-block:56px;border-bottom:1px solid var(--line)}
+.sec-head{display:grid;gap:10px;margin-bottom:26px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+
+/* perspective */
+.persp{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:22px}
+.persp .card{padding:14px}
+.persp b{display:block;font-family:var(--f-display);font-size:34px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.persp p{font-size:13px;color:var(--muted);margin-top:6px}
+
+/* devinez */
+.guess{padding:20px;display:grid;gap:14px;align-content:start}
+.guess q{font-size:18px;font-weight:600;quotes:none}
+.range-row{display:flex;align-items:center;gap:12px}
+input[type=range]{flex:1;accent-color:var(--eu);min-width:0}
+.guess-val{font-family:var(--f-display);font-size:40px;font-weight:800;min-width:3.2ch;text-align:right;font-variant-numeric:tabular-nums}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px;justify-self:start}
+.btn.ghost{background:transparent;color:var(--ink)}
+.reveal{display:grid;gap:8px}
+.cmp{position:relative;height:30px;background:var(--soft);border-radius:4px}
+.cmp i{position:absolute;top:0;bottom:0;left:0;border-radius:4px}
+.cmp .you{background:var(--muted);opacity:.45}
+.cmp .real{background:var(--us);height:10px;top:auto}
+.cmp-legend{display:flex;gap:16px;font-size:13px;color:var(--muted)}
+
+/* catégories */
+.stack{display:flex;height:64px;border-radius:var(--r);overflow:hidden;gap:2px;background:var(--line)}
+.stack button{border:0;min-width:0;color:var(--tile-ink);font-family:var(--f-mono);font-size:12px;font-weight:500;display:flex;align-items:flex-end;padding:6px;overflow:hidden;white-space:nowrap;transition:filter .15s}
+.stack button:hover{filter:brightness(1.1)}
+.cats{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:18px}
+.cat{padding:16px;display:grid;gap:8px;align-content:start;position:relative}
+.cat .sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+.cat-top{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.cat-amt{font-family:var(--f-display);font-size:36px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.cat p{font-size:14px}
+.cat .ex{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.cat.off{opacity:.5}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:3px;padding:1px 6px;color:var(--muted);white-space:nowrap}
+.linkbtn{border:0;background:none;padding:0;color:var(--eu);font-weight:600;font-size:14px;justify-self:start;text-decoration:underline;text-underline-offset:3px}
+
+/* sociétés */
+.co-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+.co-list{padding:8px}
+.co-row{display:grid;grid-template-columns:22px minmax(0,150px) minmax(0,1fr) 84px;align-items:center;gap:10px;width:100%;border:0;background:transparent;text-align:left;padding:7px 8px;border-radius:4px}
+.co-row:hover{background:var(--soft)}
+.co-row[aria-pressed="true"]{background:var(--soft);box-shadow:inset 3px 0 0 var(--gold)}
+.co-rank{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.co-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-bar{display:flex;height:14px;border-radius:2px;overflow:hidden;background:var(--soft)}
+.co-bar i{display:block;height:100%}
+.co-val{font-family:var(--f-mono);font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
+.co-detail{padding:20px;position:sticky;top:130px;display:grid;gap:14px}
+.co-detail .big{font-family:var(--f-display);font-size:52px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.plist{display:grid;gap:6px}
+.prow{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:14px}
+.prow i{width:10px;height:10px;border-radius:2px}
+.prow span:last-child{font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 10px;font-size:13px}
+.chip.risk{border-color:color-mix(in srgb,var(--us) 45%,var(--line));color:var(--us)}
+.chip.alt{border-color:color-mix(in srgb,var(--eu) 45%,var(--line));color:var(--eu)}
+.showall{margin:8px}
+
+/* treemap */
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.fchip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.fchip i{width:9px;height:9px;border-radius:2px}
+.fchip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+#tm{position:relative;height:clamp(440px,52vw,600px);border-radius:var(--r);overflow:hidden;background:var(--line)}
+.tile{position:absolute;border:0;padding:6px 7px;text-align:left;color:var(--tile-ink);overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;box-shadow:inset 0 0 0 1px var(--paper);transition:filter .12s}
+.tile:hover,.tile.sel{filter:brightness(1.12);z-index:2}
+.tile.sel{box-shadow:inset 0 0 0 3px var(--gold)}
+.tile.lt{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.14) 0 6px,transparent 6px 12px)}
+.tile b{font-size:12px;font-weight:600;line-height:1.2;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tile em{font-style:normal;font-family:var(--f-mono);font-size:12px;opacity:.9}
+.tile .co{font-family:var(--f-mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.85}
+.tip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--paper);padding:8px 10px;border-radius:4px;font-size:13px;max-width:260px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.tm-detail{margin-top:14px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 20px;align-items:center}
+.tm-detail .big{font-family:var(--f-display);font-size:44px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+
+/* table */
+.tbl-tools{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 10px}
+.tbl-tools input,.tbl-tools select{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--ink);min-width:0}
+.tbl-tools input{flex:1 1 220px}
+.tbl-wrap{overflow:auto;max-height:520px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{position:sticky;top:0;background:var(--surface);font-family:var(--f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);cursor:pointer;white-space:nowrap;user-select:none}
+th[data-k="v"],td.r{text-align:right}
+td.r{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.conf{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:3px;background:var(--soft)}
+
+/* simulateur */
+.sim{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:18px;align-items:start}
+.ctl{padding:18px;display:grid;gap:18px}
+.ctl label{display:grid;gap:6px;font-size:14px;font-weight:600}
+.ctl output{font-family:var(--f-mono);font-weight:500;color:var(--eu)}
+.chartbox{padding:16px}
+.chartbox svg{width:100%;height:auto;display:block}
+.outs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
+.out{padding:12px 14px;border-left:3px solid var(--line)}
+.out b{display:block;font-family:var(--f-display);font-size:30px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums}
+.out span{font-size:12.5px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin-bottom:8px}
+.legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:6px}
+
+/* org */
+.org{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.org .ctl input[type=number]{font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink);width:100%}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:3px 10px;font-size:12px}
+.receipt{padding:22px;font-family:var(--f-mono);font-size:14px;display:grid;gap:10px;align-content:start}
+.receipt .ln{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--line);padding-bottom:8px}
+.receipt .ln b{font-variant-numeric:tabular-nums;text-align:right}
+.receipt .tot{font-family:var(--f-display);font-size:44px;font-weight:800;color:var(--us);line-height:1}
+
+/* empreinte */
+.fp{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+.fp-groups{display:grid;gap:14px}
+.fp-g{padding:14px}
+.fp-g h4{margin:0 0 8px;font-size:13px;font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+.tool{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:5px 11px;font-size:13px;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.tool i{width:8px;height:8px;border-radius:50%}
+.tool[aria-pressed="true"]{background:var(--surface);border-color:var(--ink);font-weight:600;box-shadow:inset 0 0 0 1px var(--ink)}
+.tool.cut{text-decoration:line-through;opacity:.45;border-style:dashed}
+.fp-res{padding:20px;position:sticky;top:130px;display:grid;gap:14px}
+.gauge{height:16px;border-radius:999px;background:var(--soft);overflow:hidden;display:flex}
+.gauge i{display:block;height:100%}
+.fp-res .big{font-family:var(--f-display);font-size:60px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.keys{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.keys i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.kill{border-color:var(--us);background:var(--us);color:#fff}
+.alts{display:grid;gap:6px;font-size:14px}
+.alts div{display:flex;flex-wrap:wrap;gap:4px 8px}
+.alts s{color:var(--muted)}
+
+/* quiz */
+.quiz{padding:24px;display:grid;gap:16px;max-width:760px}
+.qopts{display:grid;gap:8px}
+.qopt{border:1px solid var(--line);background:var(--paper);text-align:left;padding:12px 14px;border-radius:var(--r);font-size:15px}
+.qopt:hover:not(:disabled){border-color:var(--ink)}
+.qopt.ok{border-color:var(--libre);background:color-mix(in srgb,var(--libre) 14%,var(--surface))}
+.qopt.ko{border-color:var(--us);background:color-mix(in srgb,var(--us) 12%,var(--surface))}
+.qopt:disabled{cursor:default}
+.qexp{font-size:14px;color:var(--muted);border-left:3px solid var(--gold);padding-left:12px}
+.qprog{display:flex;gap:4px}
+.qprog i{flex:1;height:4px;border-radius:2px;background:var(--soft)}
+.qprog i.done{background:var(--eu)}
+
+/* glossaire */
+.glo{grid-template-columns:repeat(2,minmax(0,1fr))}
+details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px}
+summary{cursor:pointer;font-weight:700;font-size:15px}
+details p{margin-top:8px;font-size:14.5px;color:var(--muted)}
+
+.srcs{columns:2;column-gap:28px;font-size:14px;padding-left:18px}
+.srcs li{margin-bottom:6px;break-inside:avoid}
+.meth{display:grid;gap:12px;max-width:72ch;font-size:15px}
+footer{padding-block:28px;font-size:13px;color:var(--muted)}
+
+@media (max-width:980px){
+  .persp{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cats,.g3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .co-layout,.sim,.org,.fp{grid-template-columns:minmax(0,1fr)}
+  .co-detail,.fp-res{position:static}
+  .outs{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  .hero .wrap{grid-template-columns:minmax(0,1fr)}
+  .stars{display:grid;grid-template-columns:90px minmax(0,1fr);gap:12px;align-items:center;text-align:left}
+  .trio{grid-template-columns:minmax(0,1fr)}
+  .cats,.g2,.g3,.glo{grid-template-columns:minmax(0,1fr)}
+  .co-row{grid-template-columns:20px minmax(0,110px) minmax(0,1fr) 70px}
+  .srcs{columns:1}
+  #tm{height:560px}
+  .tm-detail{grid-template-columns:minmax(0,1fr)}
+  .stack button span{display:none}
+  .brand{font-size:19px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <div class="brand"><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="var(--band)"/><text x="13" y="18" text-anchor="middle" font-size="14" font-weight="800" fill="var(--gold)" font-family="Big Shoulders Display, sans-serif">€</text></svg>Compteur de dépendance</div>
+    <div class="ctrls">
+      <div class="seg" role="group" aria-label="Territoire">
+        <button id="r-eu" data-set="region" data-v="eu">Union européenne</button>
+        <button id="r-fr" data-set="region" data-v="fr">France</button>
+      </div>
+      <div class="seg" role="group" aria-label="Périmètre">
+        <button id="s-strict" data-set="scope" data-v="strict" title="Cloud, logiciels et IA à usage professionnel">Cloud &amp; logiciels</button>
+        <button id="s-large" data-set="scope" data-v="large" title="Ajoute puces, matériel, publicité et abonnements grand public">Périmètre élargi</button>
+      </div>
+      <div class="seg" role="group" aria-label="Méthode">
+        <button id="m-cigref" data-set="method" data-v="cigref" title="Calé sur l'estimation macro Cigref / Asterès">Calage Cigref</button>
+        <button id="m-bu" data-set="method" data-v="bu" title="Somme des éditeurs identifiés + longue traîne prudente">Par éditeur</button>
+      </div>
+    </div>
+  </div>
+  <nav class="nav" aria-label="Sections"><div class="wrap">
+    <a href="#perspective">Ordres de grandeur</a><a href="#devinez">Devinez</a><a href="#categories">Par catégorie</a><a href="#societes">Par société</a><a href="#produits">Par produit</a><a href="#projection">Projection</a><a href="#organisation">Votre organisation</a><a href="#empreinte">Votre empreinte</a><a href="#quiz">Quiz</a><a href="#glossaire">Glossaire</a><a href="#methode">Méthode &amp; sources</a>
+  </div></nav>
+</header>
+
+<section class="hero" aria-labelledby="h1">
+  <div class="wrap">
+    <div style="min-width:0">
+      <p class="eyebrow" id="hero-eyebrow">Union européenne · depuis le 1er janvier 2026 · estimation</p>
+      <h1 id="h1" class="counter num" aria-live="off"><span id="cnt">0</span><small>€</small></h1>
+      <p class="hero-line" id="hero-line"></p>
+      <div class="trio">
+        <div><span>Par an</span><b id="t-year">—</b></div>
+        <div><span>Par seconde</span><b id="t-sec">—</b></div>
+        <div><span>Depuis votre arrivée</span><b id="t-here">0 €</b></div>
+      </div>
+    </div>
+    <div class="stars">
+      <svg viewBox="0 0 200 200" id="starring" role="img" aria-label="Douze étoiles du drapeau européen, dix sont vides"></svg>
+      <p>Sur 100 € de cloud et de logiciels pro achetés en Europe, <b>83 €</b> vont à des acteurs américains. Soit <b>10 étoiles sur 12</b>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="perspective">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Mettre en perspective</p>
+      <h2>Ça représente quoi ?</h2>
+      <p class="lede">Les montants en milliards sont abstraits. Voici le même flux comparé à des repères publics. Les cartes suivent les réglages en haut de page.</p>
+    </div>
+    <div class="persp" id="persp"></div>
+  </div>
+</section>
+
+<section class="sec" id="devinez">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Testez votre intuition</p>
+      <h2>Devinez avant de lire</h2>
+      <p class="lede">Placez le curseur, puis révélez la réponse. La plupart des gens sous-estiment la seconde.</p>
+    </div>
+    <div class="grid g2" id="guesses"></div>
+  </div>
+</section>
+
+<section class="sec" id="categories">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Par type de dépendance</p>
+      <h2>Où part l'argent</h2>
+      <p class="lede">Neuf familles de dépenses, de la location de serveurs aux budgets publicitaires. Cliquez une couleur de la barre ou une carte pour voir les produits concernés.</p>
+    </div>
+    <div class="stack" id="stack" aria-label="Répartition par catégorie"></div>
+    <div class="grid cats" id="cats"></div>
+  </div>
+</section>
+
+<section class="sec" id="societes">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Par société</p>
+      <h2>Qui encaisse</h2>
+      <p class="lede">Classement des fournisseurs extra-européens par montant estimé. Chaque barre est découpée par catégorie. Choisissez une société pour voir ses produits, les risques associés et des alternatives européennes.</p>
+    </div>
+    <div class="co-layout">
+      <div class="card co-list" id="colist"></div>
+      <aside class="card co-detail" id="codetail" aria-live="polite"></aside>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="produits">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Par produit</p>
+      <h2>La carte des produits</h2>
+      <p class="lede">Chaque rectangle est proportionnel au montant estimé. Les rectangles hachurés représentent la longue traîne : des milliers d'autres éditeurs américains et l'écart avec l'estimation globale.</p>
+    </div>
+    <div class="filters" id="tmfilters"></div>
+    <div id="tm" role="group" aria-label="Carte proportionnelle des produits"></div>
+    <div class="card tm-detail" id="tmdetail" aria-live="polite"></div>
+    <div class="tbl-tools">
+      <input id="q" type="search" placeholder="Chercher un produit ou une société (ex. Teams, Oracle, GPU)" aria-label="Chercher">
+      <select id="qcat" aria-label="Filtrer par catégorie"></select>
+    </div>
+    <div class="tbl-wrap"><table><thead><tr>
+      <th data-k="name">Produit</th><th data-k="co">Société</th><th data-k="cat">Catégorie</th><th data-k="v">Montant / an</th><th data-k="sh">Part</th><th data-k="conf">Fiabilité</th>
+    </tr></thead><tbody id="tbody"></tbody></table></div>
+    <p class="small" style="margin-top:8px">Cliquez un en-tête pour trier. Fiabilité « moyenne » : appuyée sur des chiffres d'affaires géographiques publiés. « Faible » : extrapolation.</p>
+  </div>
+</section>
+
+<section class="sec" id="projection">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Projection 2026 → 2035</p>
+      <h2>Et si rien ne change ?</h2>
+      <p class="lede">Les DSI interrogés par Asterès constatent une hausse moyenne d'environ 10 % par an des prix du cloud et des logiciels américains. Réglez cette hausse et la part que l'Europe pourrait produire elle-même d'ici 2035.</p>
+    </div>
+    <div class="sim">
+      <div class="card ctl">
+        <label for="g">Hausse annuelle des dépenses <output id="go">10 %</output><input id="g" type="range" min="0" max="20" step="1" value="10"></label>
+        <label for="rl">Part relocalisée en Europe en 2035 <output id="rlo">15 %</output><input id="rl" type="range" min="0" max="50" step="1" value="15"></label>
+        <div class="presets" aria-label="Scénarios">
+          <button data-p="10,0">Laisser filer</button><button data-p="10,15">Scénario Asterès 15 %</button><button data-p="5,30">Sursaut européen</button>
+        </div>
+        <p class="small">Base : périmètre cloud &amp; logiciels pro de la zone choisie en 2026. La relocalisation progresse en ligne droite de 0 en 2026 jusqu'à la cible en 2035.</p>
+      </div>
+      <div style="min-width:0">
+        <div class="card chartbox">
+          <div class="legend"><span><i style="background:var(--us)"></i>Sans changement</span><span><i style="background:var(--eu)"></i>Avec relocalisation</span><span><i style="background:var(--gold);height:10px;opacity:.5"></i>Restant en Europe</span></div>
+          <svg id="chart" viewBox="0 0 640 300" role="img" aria-label="Projection des dépenses vers les fournisseurs extra-européens"></svg>
+        </div>
+        <div class="outs" id="outs"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="organisation">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Calculateur</p>
+      <h2>La facture de votre organisation</h2>
+      <p class="lede">Une estimation à partir de votre chiffre d'affaires, avec les ratios observés par Asterès auprès de grandes entreprises. Exemple pré-rempli : une ETI de 500 M€ et 2 000 salariés.</p>
+    </div>
+    <div class="org">
+      <div class="card ctl">
+        <label for="ca">Chiffre d'affaires ou budget annuel (M€)<input id="ca" type="number" min="1" step="10" value="500"></label>
+        <label for="emp">Effectif (salariés ou agents)<input id="emp" type="number" min="1" step="10" value="2000"></label>
+        <label for="int">Part du CA dépensée en cloud &amp; logiciels <output id="into">2,2 %</output><input id="int" type="range" min="0.5" max="8" step="0.1" value="2.2"></label>
+        <div class="presets" aria-label="Profils"><button data-i="1.2">Commerce</button><button data-i="1.6">Industrie</button><button data-i="2.2">Moyenne grandes entreprises</button><button data-i="4">Banque, assurance</button><button data-i="6.5">Éditeur, numérique</button></div>
+        <label for="us">Part captée par des fournisseurs américains <output id="uso">83 %</output><input id="us" type="range" min="0" max="100" step="1" value="83"></label>
+        <p class="small">2,2 % et 83 % sont les moyennes de l'étude Asterès pour le Cigref. Les autres profils sont des hypothèses à ajuster.</p>
+      </div>
+      <div class="card receipt" id="receipt" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="empreinte">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Votre empreinte</p>
+      <h2>Et si on coupait le robinet ?</h2>
+      <p class="lede">Sélectionnez les outils que vous utilisez. La commission d'enquête de l'Assemblée nationale ne juge plus improbable un « kill switch », une coupure des services américains imposée depuis Washington. Simulez-la.</p>
+    </div>
+    <div class="fp">
+      <div class="fp-groups" id="fpgroups"></div>
+      <aside class="card fp-res" id="fpres" aria-live="polite"></aside>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="quiz">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Quiz</p>
+      <h2>Sept questions pour vérifier</h2>
+    </div>
+    <div class="card quiz" id="quizbox"></div>
+  </div>
+</section>
+
+<section class="sec" id="glossaire">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Glossaire</p>
+      <h2>Les mots du sujet</h2>
+    </div>
+    <div class="grid glo" id="glo"></div>
+  </div>
+</section>
+
+<section class="sec" id="methode">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Méthode &amp; sources</p>
+      <h2>Comment ces chiffres sont construits</h2>
+    </div>
+    <div class="meth">
+      <p><b>Point d'ancrage.</b> L'étude Asterès pour le Cigref (avril 2025) estime à 264 Md€ par an les achats de cloud et de logiciels professionnels des entreprises de l'UE qui bénéficient à l'économie américaine, soit environ 83 % d'un total de 400 Md€ (66 Md€ pour la France). Le compteur applique la hausse de 10 % par an relevée par l'étude pour obtenir environ 290 Md€ en 2026.</p>
+      <p><b>Deux méthodes.</b> « Calage Cigref » répartit ces 290 Md€ entre les éditeurs identifiés et une longue traîne qui comble l'écart. « Par éditeur » additionne les estimations produit par produit et ajoute une longue traîne prudente de 30 %. L'écart entre les deux (environ 130 Md€ pour l'UE) montre l'incertitude réelle : des milliers d'éditeurs, des marges de revendeurs, des services cachés dans les contrats.</p>
+      <p><b>Estimations produit.</b> Elles partent des chiffres d'affaires géographiques publiés (par exemple 46,6 Md$ de revenus Europe pour Meta en 2025, Russie, Turquie et Royaume-Uni compris), des parts de marché cloud de Synergy Research, puis d'une part UE-27 et d'une croissance 2026. Ce sont des ordres de grandeur, avec une marge d'erreur de ±25 % ou plus.</p>
+      <p><b>France.</b> Environ 20 % du total UE pour le cloud et les logiciels (ratio Cigref), 15 % pour les puces, le matériel, la publicité et le grand public (poids démographique et économique).</p>
+      <p><b>Ce qui n'est pas compté.</b> Le streaming vidéo, le commerce en ligne, les paiements par carte, et la valeur des données personnelles cédées aux plateformes gratuites.</p>
+    </div>
+    <h3 style="margin:30px 0 12px">Sources</h3>
+    <ul class="srcs">
+      <li><a href="https://www.editionmultimedia.fr/wp-content/uploads/2026/06/Etude-Asteres-pour-le-Cigref-La-dependance-aux-cloud-et-logiciels-americains-avril-2025.pdf" target="_blank" rel="noopener">Asterès pour le Cigref, La dépendance technologique aux softwares &amp; cloud services américains (avril 2025)</a></li>
+      <li><a href="https://www.lemondeinformatique.fr/actualites/lire-le-cigref-evalue-la-dependance-economique-aux-clouds-americains-96746.html" target="_blank" rel="noopener">Le Monde Informatique : le Cigref évalue la dépendance aux clouds américains</a></li>
+      <li><a href="https://www.solutions-numeriques.com/?p=237494" target="_blank" rel="noopener">Solutions Numériques : 178 000 emplois pour 5 % réorientés</a></li>
+      <li><a href="https://www.solutions-numeriques.com/souverainete-numerique-15-milliard-deuros-par-an-pour-financer-une-dependance-a-80-americaine/" target="_blank" rel="noopener">Solutions Numériques : 1,5 Md€ par an de logiciels extra-européens pour l'État (juillet 2026)</a></li>
+      <li><a href="https://www.assemblee-nationale.fr/dyn/opendata/RAPPANR5L17B3054-t1.html" target="_blank" rel="noopener">Assemblée nationale, rapport n° 3054 de la commission d'enquête sur les dépendances numériques (juillet 2026)</a></li>
+      <li><a href="https://www.datacenterdynamics.com/en/news/european-cloud-providers-hold-15-of-local-market-share-synergy-research" target="_blank" rel="noopener">DCD / Synergy Research : 15 % de part locale pour les clouds européens</a></li>
+      <li><a href="https://www.theregister.com/2025/07/28/euro_cloud_vs_us/" target="_blank" rel="noopener">The Register : 70 % du marché européen pour Amazon, Microsoft et Google</a></li>
+      <li><a href="https://www.mobileworldlive.com/big-tech/cloud-spend-crosses-half-trillion-dollar-run-rate-due-to-ai-surge/" target="_blank" rel="noopener">Mobile World Live / Synergy : parts de marché mondiales T1 2026</a></li>
+      <li><a href="https://app.edgar.tools/companies/META/disclosures/revenue" target="_blank" rel="noopener">Meta, rapport annuel 2025 : revenus par zone</a></li>
+      <li><a href="https://www.webull.com/news/13798773956232192" target="_blank" rel="noopener">Palantir, résultats du T3 2025</a></li>
+      <li><a href="https://www.actuia.com/en/news/anthropic-at-965b-series-h-of-65-billion-no-european-public-funds-in-the-round/" target="_blank" rel="noopener">ActuIA : revenus annualisés d'Anthropic et d'OpenAI (mai 2026)</a></li>
+      <li><a href="https://www.getmoss.com/vendor-market-spend" target="_blank" rel="noopener">Moss : rapport 2026 sur les dépenses SaaS et IA en Europe</a></li>
+      <li><a href="https://www.cispe.cloud/?p=25724" target="_blank" rel="noopener">CISPE : plainte contre Broadcom (hausses de plus de 1 000 %)</a></li>
+      <li><a href="https://www.techzine.eu/news/infrastructure/131677/license-fees-8-to-15-times-higher-since-vmware-became-part-of-broadcom" target="_blank" rel="noopener">Techzine / ECCO : licences VMware 8 à 15 fois plus chères</a></li>
+      <li><a href="https://www.boursorama.com/actualite-economique/actualites/265-milliards-d-euros-par-an-la-france-veut-reduire-la-dependance-numerique-de-l-europe-aux-etats-unis-5950f0d6ebb5d5b80212b0a25ef7ead3" target="_blank" rel="noopener">Boursorama : la feuille de route du gouvernement (janvier 2026)</a></li>
+      <li><a href="https://www.blogdumoderateur.com/souverainete-numerique-solutions-europeennes-pas-hauteur-grands-groupes/" target="_blank" rel="noopener">Blog du Modérateur : baromètre France Digitale / EY 2026</a></li>
+      <li><a href="https://www.assemblee-nationale.fr/dyn/17/amendements/1906C/AN/1393.pdf" target="_blank" rel="noopener">Assemblée nationale : contrat Microsoft de l'Éducation nationale (75 à 152 M€ sur 4 ans)</a></li>
+    </ul>
+  </div>
+</section>
+
+<footer><div class="wrap">Estimations indépendantes à visée pédagogique, mises à jour en novembre 2026. Elles ne remplacent pas une étude statistique officielle. Les montants sont en euros courants, hors TVA.</div></footer>
+
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- données ---------- */
+const CATS = {
+  iaas:{n:"Cloud d'infrastructure",s:"IaaS",p:"strict",fr:.20,def:"Location à la demande de serveurs virtuels, de stockage et de réseau. Vous gérez le système et les applications, le fournisseur gère les machines et les datacenters.",ex:"Amazon EC2, Azure Virtual Machines, Google Compute Engine",us:"Amazon, Microsoft et Google détiennent environ 70 % du marché cloud européen (Synergy)."},
+  paas:{n:"Plateformes cloud & données",s:"PaaS",p:"strict",fr:.20,def:"Des briques prêtes à l'emploi posées sur l'infrastructure : bases de données gérées, conteneurs, fonctions serverless, entrepôts de données. Le développeur ne voit plus les serveurs.",ex:"AWS RDS, Azure SQL, BigQuery, Snowflake",us:"Services propriétaires, donc verrouillage plus fort qu'en IaaS : migrer veut dire réécrire."},
+  saas:{n:"Logiciels en ligne",s:"SaaS",p:"strict",fr:.20,def:"Des applications complètes louées par abonnement et utilisées dans le navigateur : bureautique, CRM, RH, gestion de projet. Rien à installer, mais les données vivent chez l'éditeur.",ex:"Microsoft 365, Salesforce, Jira, Workday",us:"Domination américaine en bureautique, CRM et gestion des services IT."},
+  lic:{n:"Licences & logiciels installés",s:"On-premise",p:"strict",fr:.20,def:"Des logiciels installés sur vos propres serveurs et postes, payés en licences et en maintenance annuelle : systèmes d'exploitation, bases de données, virtualisation, CAO.",ex:"Windows, Oracle Database, VMware vSphere, Red Hat",us:"Microsoft, Oracle et VMware concentrent l'essentiel des achats de l'État (Assemblée nationale, 2026)."},
+  ia:{n:"IA générative",s:"IA / tokens",p:"strict",fr:.20,def:"Des modèles de langage payés à l'usage, par million de tokens via une API, ou par siège pour les assistants et copilotes de code. Un token vaut environ trois quarts de mot.",ex:"API Claude, API OpenAI, Microsoft 365 Copilot, GitHub Copilot",us:"Très forte. Mistral AI est la principale alternative européenne à l'échelle."},
+  puces:{n:"Puces & accélérateurs",s:"Chips",p:"large",fr:.15,def:"Processeurs, GPU et puces réseau conçus par des entreprises américaines, même quand ils sont fabriqués à Taïwan ou en Irlande. Ils équipent datacenters, PC et téléphones.",ex:"GPU NVIDIA Blackwell, processeurs Intel et AMD",us:"Quasi totale pour les GPU d'IA, et soumise aux contrôles à l'export américains."},
+  mat:{n:"Matériel & terminaux",s:"Hardware",p:"large",fr:.15,def:"Téléphones, ordinateurs, serveurs et équipements réseau de marques américaines, avec leur système et leur logiciel embarqués.",ex:"iPhone, Mac, serveurs Dell, routeurs Cisco",us:"Forte sur smartphones haut de gamme, PC et réseau d'entreprise."},
+  pub:{n:"Publicité & plateformes",s:"Publicité",p:"large",fr:.15,def:"Budgets publicitaires que les entreprises européennes versent aux moteurs de recherche et aux réseaux sociaux pour toucher leurs propres clients.",ex:"Google Ads, publicité Instagram, Amazon Ads, LinkedIn",us:"Google et Meta captent l'essentiel de la publicité en ligne en Europe."},
+  gp:{n:"Abonnements grand public",s:"Grand public",p:"large",fr:.15,def:"Ce que paient directement les particuliers : stockage en ligne, abonnements IA, commissions des magasins d'applications.",ex:"iCloud+, ChatGPT Plus, App Store, Google Play",us:"Les deux magasins d'applications (Apple, Google) sont américains."}
+};
+const CO = {
+  microsoft:{n:"Microsoft",hq:"Redmond, États-Unis",note:"Premier éditeur des administrations françaises : 115 M€ en 2025 sur le seul périmètre étudié par la commission d'enquête. Un responsable de Microsoft France n'a pas pu garantir sous serment, devant le Sénat, que des données ne seraient jamais transmises aux autorités américaines.",risks:["Cloud Act","Verrouillage bureautique","Hausse des licences"],alts:["La Suite numérique (FR)","Nextcloud (DE)","OnlyOffice (LV)","OVHcloud (FR)","Scaleway (FR)"]},
+  amazon:{n:"Amazon (AWS)",hq:"Seattle, États-Unis",note:"Leader mondial du cloud avec 28 % du marché au 1er trimestre 2026 (Synergy). AWS a annoncé 7,8 Md€ sur 15 ans pour un « European Sovereign Cloud », qui reste une entreprise américaine.",risks:["Cloud Act","Frais de sortie des données","Services propriétaires"],alts:["OVHcloud (FR)","Scaleway (FR)","Outscale (FR, SecNumCloud)","Hetzner (DE)","IONOS (DE)","STACKIT (DE)"]},
+  google:{n:"Google (Alphabet)",hq:"Mountain View, États-Unis",note:"L'essentiel de l'argent européen part en publicité, pas en cloud. Google a reçu 60 000 demandes de divulgation de données des autorités, honorées à 89 % (rapport de l'Assemblée).",risks:["Cloud Act","Dépendance d'audience","Commission Google Play"],alts:["Qwant (FR)","Ecosia (DE)","Criteo (FR, publicité)","La Suite numérique (FR)"]},
+  meta:{n:"Meta",hq:"Menlo Park, États-Unis",note:"Meta a déclaré 46,6 Md$ de revenus en Europe en 2025 (Russie, Turquie et Royaume-Uni compris), en hausse de 21 %.",risks:["Dépendance d'audience","Règles de ciblage changeantes"],alts:["Pas d'équivalent européen à cette échelle","Mastodon (réseau fédéré)"]},
+  oracle:{n:"Oracle",hq:"Austin, États-Unis",note:"Ses bases de données sont au cœur de nombreux systèmes publics et bancaires. Les audits de licences et le passage de Java SE à une tarification par employé alourdissent la facture.",risks:["Audits de licences","Tarification Java SE","Cloud Act"],alts:["PostgreSQL (libre)","Outscale (FR)"]},
+  broadcom:{n:"Broadcom (VMware)",hq:"Palo Alto, États-Unis",note:"Depuis le rachat de VMware fin 2023, le CISPE rapporte des hausses cumulées de plus de 1 000 % pour certains fournisseurs cloud européens, et l'observatoire ECCO des factures 8 à 15 fois plus élevées.",risks:["Hausses de prix massives","Fin du programme partenaires","Regroupement forcé d'offres"],alts:["Proxmox VE (AT)","XCP-ng / Vates (FR)","OpenStack (libre)"]},
+  palantir:{n:"Palantir",hq:"Denver, États-Unis",note:"Petit en euros, grand en sensibilité : ses logiciels équipent des services de renseignement, de défense et de santé en Europe. Environ trois quarts de son chiffre d'affaires viennent des États-Unis.",risks:["Données régaliennes","Cloud Act","Dépendance opérationnelle"],alts:["ChapsVision (FR)","Plateformes de données open source"]},
+  atlassian:{n:"Atlassian",hq:"Origine australienne, siège juridique aux États-Unis depuis 2022",note:"La fin des licences « Server » en 2024 a poussé les clients vers le cloud d'Atlassian ou vers l'offre Data Center, plus chère.",risks:["Bascule cloud imposée","Cloud Act"],alts:["Tuleap (FR)","OpenProject (DE)","XWiki (FR)"]},
+  nvidia:{n:"NVIDIA",hq:"Santa Clara, États-Unis",note:"Quasi-monopole sur les GPU d'entraînement et d'inférence. Leurs exportations dépendent des règles fixées par Washington.",risks:["Contrôles à l'export","Monopole matériel IA","Pénurie et prix"],alts:["SiPearl (FR)","Axelera AI (NL)","Pas d'alternative à l'échelle à court terme"]},
+  openai:{n:"OpenAI",hq:"San Francisco, États-Unis",note:"Environ 24 Md$ de revenus annualisés début 2026. Selon OpenAI, la France fait partie des marchés d'entreprise à la croissance la plus rapide.",risks:["Cloud Act","Changements de modèles et de prix"],alts:["Mistral AI (FR)","LightOn (FR)","Aleph Alpha (DE)","Modèles ouverts auto-hébergés"]},
+  anthropic:{n:"Anthropic",hq:"San Francisco, États-Unis",note:"Ses revenus annualisés ont dépassé ceux d'OpenAI en 2026. Dans l'échantillon de dépenses par carte de Moss, Anthropic capte la majorité des dépenses d'IA des entreprises européennes. En juin 2026, la suspension temporaire de l'accès à certains modèles pour se conformer aux contrôles à l'export américains a illustré le risque opérationnel.",risks:["Contrôles à l'export","Cloud Act","Changements de modèles et de prix"],alts:["Mistral AI (FR)","LightOn (FR)","Aleph Alpha (DE)","Modèles ouverts auto-hébergés"]},
+  salesforce:{n:"Salesforce",hq:"San Francisco, États-Unis",note:"Leader mondial du CRM, propriétaire de Slack, Tableau et MuleSoft.",risks:["Cloud Act","Verrouillage des données clients"],alts:["Odoo (BE)","SAP (DE)","Sellsy (FR)"]},
+  servicenow:{n:"ServiceNow",hq:"Santa Clara, États-Unis",note:"Plateforme de référence pour la gestion des services informatiques des grands groupes.",risks:["Cloud Act","Coût par utilisateur"],alts:["EasyVista (FR)","TOPdesk (NL)","iTop / Combodo (FR)"]},
+  workday:{n:"Workday",hq:"Pleasanton, États-Unis",note:"Données RH et paie des salariés hébergées chez un éditeur américain.",risks:["Données personnelles RH","Cloud Act"],alts:["SAP SuccessFactors (DE)","Cegid (FR)","Personio (DE)"]},
+  adobe:{n:"Adobe",hq:"San José, États-Unis",note:"Passage complet à l'abonnement depuis 2013 : plus aucune licence perpétuelle pour Photoshop ou Illustrator.",risks:["Abonnement obligatoire","Formats propriétaires"],alts:["Yousign (FR, signature)","Krita et GIMP (libres)","Scribus (libre)"]},
+  ibm:{n:"IBM / Red Hat",hq:"Armonk, États-Unis",note:"Red Hat distribue de l'open source, mais la distribution, le support et la feuille de route sont américains. Les mainframes IBM font tourner une bonne partie des banques européennes.",risks:["Mainframes difficiles à migrer","Support propriétaire"],alts:["SUSE (DE)","Debian (libre)"]},
+  cisco:{n:"Cisco",hq:"San José, États-Unis",note:"Réseau d'entreprise, sécurité, visioconférence Webex et, depuis 2024, Splunk.",risks:["Firmware propriétaire","Contrôles à l'export"],alts:["Nokia (FI)","Ericsson (SE)","Stormshield (FR)"]},
+  apple:{n:"Apple",hq:"Cupertino, États-Unis",note:"Le Digital Markets Act européen oblige Apple à ouvrir iOS à d'autres magasins d'applications dans l'UE.",risks:["Écosystème fermé","Commissions App Store"],alts:["Fairphone (NL)","/e/OS par Murena (FR)"]},
+  dellhp:{n:"Dell, HP, HPE",hq:"Texas et Californie, États-Unis",note:"Serveurs, PC et baies de stockage : du matériel souvent assemblé hors des États-Unis mais conçu et piloté depuis là-bas.",risks:["Firmware et support","Chaîne d'approvisionnement"],alts:["Eviden / Bull (FR)","Assembleurs européens"]},
+  intel:{n:"Intel",hq:"Santa Clara, États-Unis",note:"Usines en Irlande, mais conception et contrôle américains.",risks:["Contrôles à l'export"],alts:["SiPearl (FR)"]},
+  amd:{n:"AMD",hq:"Santa Clara, États-Unis",note:"Processeurs EPYC pour serveurs et GPU Instinct pour l'IA.",risks:["Contrôles à l'export"],alts:["SiPearl (FR)"]},
+  qualcomm:{n:"Qualcomm",hq:"San Diego, États-Unis",note:"Puces de la majorité des smartphones Android haut de gamme et de nouveaux PC.",risks:["Brevets et licences"],alts:["STMicroelectronics (FR-IT) et NXP (NL) sur d'autres segments"]},
+  micron:{n:"Micron",hq:"Boise, États-Unis",note:"Mémoire DRAM et HBM, indispensable aux GPU d'IA.",risks:["Marché très concentré"],alts:["Pas de fabricant européen de mémoire à cette échelle"]},
+  cyber:{n:"Cybersécurité US",hq:"États-Unis",note:"Palo Alto Networks, CrowdStrike, Fortinet, Zscaler, Okta : des outils qui voient passer tout le trafic et toutes les identités.",risks:["Accès privilégié au SI","Cloud Act"],alts:["Stormshield (FR)","HarfangLab (FR)","Sekoia (FR)","Wallix (FR)"]},
+  data:{n:"Plateformes data US",hq:"États-Unis",note:"Snowflake, Databricks, Datadog, MongoDB : la donnée et sa surveillance, facturées à la consommation.",risks:["Facturation à l'usage","Cloud Act"],alts:["PostgreSQL et Apache Spark sur cloud européen"]},
+  cao:{n:"CAO & simulation US",hq:"États-Unis",note:"Autodesk, Synopsys (avec Ansys), Cadence, PTC : la conception industrielle et électronique.",risks:["Formats propriétaires","Contrôles à l'export"],alts:["Dassault Systèmes (FR)","Siemens (DE)"]},
+  autresia:{n:"Autres IA US",hq:"États-Unis",note:"Cursor, Perplexity, Midjourney et des dizaines d'outils payés par carte bancaire, souvent hors des achats officiels.",risks:["Shadow IT","Données confidentielles"],alts:["Mistral AI (FR)"]},
+  longtail:{n:"Longue traîne & écart",hq:"États-Unis, surtout",note:"Des milliers d'autres éditeurs (HubSpot, Zoom, DocuSign, Zendesk…), les marges des revendeurs et l'écart entre la somme des éditeurs identifiés et l'estimation globale. C'est la part la plus incertaine.",risks:["Incertitude élevée"],alts:["Annuaire des solutions européennes du Cigref et de France Digitale"]}
+};
+const RAW = [
+ ["microsoft","Microsoft 365 (Office, Teams, Exchange)","saas",13,"m"],
+ ["microsoft","Azure : calcul & stockage","iaas",9,"m"],
+ ["microsoft","Azure : PaaS & données (SQL, Fabric, AKS)","paas",6,"m"],
+ ["microsoft","Azure OpenAI & AI Foundry","ia",2,"f"],
+ ["microsoft","Microsoft 365 Copilot","ia",1.8,"f"],
+ ["microsoft","GitHub Copilot","ia",0.8,"f"],
+ ["microsoft","GitHub","saas",0.6,"f"],
+ ["microsoft","Windows (postes, licences entreprise)","lic",4.5,"m"],
+ ["microsoft","Windows Server, SQL Server, System Center","lic",4.5,"m"],
+ ["microsoft","Dynamics 365","saas",2.2,"m"],
+ ["microsoft","LinkedIn (recrutement & publicité)","pub",2.5,"m"],
+ ["microsoft","Microsoft Advertising (Bing)","pub",1.2,"f"],
+ ["microsoft","Surface & Xbox","mat",1.8,"f"],
+ ["microsoft","Microsoft 365 Famille, Game Pass","gp",1.5,"f"],
+ ["amazon","AWS : calcul & stockage (EC2, S3)","iaas",11,"m"],
+ ["amazon","AWS : PaaS & données (RDS, Lambda, Redshift)","paas",6.5,"m"],
+ ["amazon","Amazon Bedrock","ia",1.2,"f"],
+ ["amazon","Amazon Ads","pub",7.5,"f"],
+ ["amazon","Prime Video, Kindle, Audible","gp",2,"f"],
+ ["google","Google Ads (Recherche, YouTube, Display)","pub",42,"m"],
+ ["google","Google Cloud : calcul & stockage","iaas",3,"m"],
+ ["google","Google Cloud : PaaS & données (BigQuery, GKE)","paas",2.5,"m"],
+ ["google","Vertex AI & API Gemini","ia",1,"f"],
+ ["google","Google Workspace","saas",2.5,"m"],
+ ["google","Google Play (commissions)","gp",3,"f"],
+ ["google","Google One & abonnements Gemini","gp",1.5,"f"],
+ ["google","YouTube Premium","gp",1,"f"],
+ ["google","Pixel & Nest","mat",0.8,"f"],
+ ["meta","Publicité Facebook & Instagram","pub",30,"m"],
+ ["meta","WhatsApp Business (messages payants)","pub",0.8,"f"],
+ ["meta","Meta Quest & lunettes connectées","mat",0.4,"f"],
+ ["oracle","Oracle Database (licences & support)","lic",4.2,"m"],
+ ["oracle","Middleware & Java SE","lic",1.3,"f"],
+ ["oracle","Oracle Cloud Infrastructure (OCI)","iaas",1.5,"f"],
+ ["oracle","Oracle Fusion & NetSuite (ERP)","saas",2.2,"f"],
+ ["broadcom","VMware Cloud Foundation / vSphere","lic",4.3,"m"],
+ ["broadcom","Logiciels mainframe & sécurité (CA, Symantec)","lic",1,"f"],
+ ["broadcom","Puces réseau & ASIC d'IA","puces",2.5,"f"],
+ ["palantir","Foundry & AIP (entreprises)","saas",0.25,"f"],
+ ["palantir","Gotham (défense, renseignement)","lic",0.15,"f"],
+ ["atlassian","Jira","saas",0.6,"f"],
+ ["atlassian","Confluence","saas",0.3,"f"],
+ ["atlassian","Trello, Loom et autres","saas",0.1,"f"],
+ ["nvidia","GPU pour datacenters (Hopper, Blackwell)","puces",10,"f"],
+ ["nvidia","GPU grand public & stations (GeForce, RTX)","puces",1.5,"f"],
+ ["nvidia","NVIDIA AI Enterprise & DGX Cloud","lic",0.3,"f"],
+ ["openai","ChatGPT Business & Enterprise","ia",1.3,"f"],
+ ["openai","API OpenAI","ia",1,"f"],
+ ["openai","ChatGPT Plus & Pro (particuliers)","gp",1.2,"f"],
+ ["anthropic","API Claude","ia",2.4,"f"],
+ ["anthropic","Claude Enterprise, Team & Claude Code","ia",1.6,"f"],
+ ["anthropic","Claude Pro & Max (particuliers)","gp",0.4,"f"],
+ ["salesforce","Sales Cloud & Service Cloud","saas",3.9,"m"],
+ ["salesforce","Slack","saas",0.6,"f"],
+ ["salesforce","Tableau, MuleSoft, Data Cloud","saas",1.1,"f"],
+ ["servicenow","Now Platform (ITSM, RH, service client)","saas",2.2,"m"],
+ ["workday","Workday RH & Finance","saas",1.2,"f"],
+ ["adobe","Creative Cloud","saas",2.3,"m"],
+ ["adobe","Acrobat & Document Cloud","saas",0.8,"f"],
+ ["adobe","Experience Cloud (marketing)","saas",0.6,"f"],
+ ["ibm","Red Hat (RHEL, OpenShift)","lic",1.4,"f"],
+ ["ibm","Logiciels IBM (mainframe z, Db2, Maximo)","lic",2,"f"],
+ ["cisco","Réseau & sécurité (matériel)","mat",6,"f"],
+ ["cisco","Webex, Splunk & logiciels de sécurité","saas",1.6,"f"],
+ ["apple","iPhone, Mac, iPad","mat",36,"m"],
+ ["apple","App Store, iCloud+, Apple Music","gp",11,"m"],
+ ["dellhp","Serveurs, PC & stockage","mat",18,"f"],
+ ["intel","Processeurs (Xeon, Core)","puces",7,"f"],
+ ["amd","Processeurs & GPU (EPYC, Instinct)","puces",5,"f"],
+ ["qualcomm","Puces pour smartphones & PC","puces",3.5,"f"],
+ ["micron","Mémoire DRAM & HBM","puces",1.5,"f"],
+ ["cyber","Palo Alto, CrowdStrike, Fortinet, Zscaler, Okta","saas",3.2,"f"],
+ ["data","Snowflake, Databricks, Datadog, MongoDB","paas",3,"f"],
+ ["cao","Autodesk, Synopsys-Ansys, Cadence, PTC","lic",3.5,"f"],
+ ["autresia","Cursor, Perplexity, Midjourney…","ia",1,"f"]
+];
+const CIGREF_2026_EU = 290; // 264 Md€ (Asterès, 2025) × 1,10
+const POP = {eu:449.2e6, fr:68.6e6};
+const JOBS_PER_MD = 13500;   // 178 000 emplois pour 5 % de 264 Md€
+const US_JOBS_PER_MD = 1.9e6/264;
+
+/* ---------- état ---------- */
+let state = {region:"eu",scope:"strict",method:"cigref"};
+try{ const s = JSON.parse(localStorage.getItem("cdn-state")||"{}"); ["region","scope","method"].forEach(k=>{ if(s[k]) state[k]=s[k]; }); }catch(e){}
+function save(){ try{ localStorage.setItem("cdn-state",JSON.stringify(state)); }catch(e){} }
+
+let PRODUCTS = [];
+function buildProducts(){
+  const named = RAW.map((r,i)=>({id:i,co:r[0],name:r[1],cat:r[2],eu:r[3],conf:r[4]}));
+  const S = named.filter(p=>CATS[p.cat].p==="strict").reduce((a,p)=>a+p.eu,0);
+  const LT = state.method==="cigref" ? Math.max(0,CIGREF_2026_EU - S) : S*0.30;
+  PRODUCTS = named.concat([
+    {id:900,co:"longtail",name:"Autres SaaS : HubSpot, Zoom, DocuSign, Zendesk… et des milliers d'autres",cat:"saas",eu:LT*.65,conf:"f",lt:true},
+    {id:901,co:"longtail",name:"Autres licences, maintenance & marges de revente",cat:"lic",eu:LT*.25,conf:"f",lt:true},
+    {id:902,co:"longtail",name:"Autres hébergements & services managés",cat:"paas",eu:LT*.10,conf:"f",lt:true}
+  ]);
+}
+const amt = p => state.region==="eu" ? p.eu : p.eu*CATS[p.cat].fr;
+const inScope = p => state.scope==="large" || CATS[p.cat].p==="strict";
+const active = () => PRODUCTS.filter(inScope);
+const sum = arr => arr.reduce((a,b)=>a+b,0);
+function total(){ return sum(active().map(amt)); }
+function strictTotal(){ return sum(PRODUCTS.filter(p=>CATS[p.cat].p==="strict").map(amt)); }
+
+/* ---------- formats ---------- */
+const nf0 = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:0});
+const nf1 = new Intl.NumberFormat("fr-FR",{minimumFractionDigits:1,maximumFractionDigits:1});
+function md(v){ if(v>=100) return nf0.format(v)+" Md€"; if(v>=1) return nf1.format(v)+" Md€"; if(v>=0.001) return nf0.format(v*1000)+" M€"; return "< 1 M€"; }
+function eur(v){ return nf0.format(v)+" €"; }
+function pct(v,d){ return (d?nf1:nf0).format(v)+" %"; }
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $ = id => document.getElementById(id);
+const region = () => state.region==="eu" ? "l'Union européenne" : "la France";
+
+/* ---------- réglages ---------- */
+document.querySelectorAll("[data-set]").forEach(b=>{
+  b.addEventListener("click",()=>{ state[b.dataset.set]=b.dataset.v; save(); if(b.dataset.set==="method") buildProducts(); renderAll(); });
+});
+function syncCtrls(){ document.querySelectorAll("[data-set]").forEach(b=>b.setAttribute("aria-pressed", String(state[b.dataset.set]===b.dataset.v))); }
+
+/* ---------- héro ---------- */
+let curTotal = 0, arrival = performance.now();
+function renderHero(){
+  curTotal = total();
+  const yr = new Date().getFullYear();
+  $("hero-eyebrow").textContent = (state.region==="eu"?"Union européenne":"France")+" · depuis le 1er janvier "+yr+" · estimation";
+  const what = state.scope==="strict" ? "pour le cloud, les logiciels et l'IA à usage professionnel" : "pour le cloud, les logiciels, l'IA, les puces, le matériel, la publicité et les abonnements";
+  $("hero-line").innerHTML = "versés par les organisations et les habitants de "+region()+" à des fournisseurs extra-européens, surtout américains, "+what+". Soit <strong>"+md(curTotal)+" par an</strong> selon nos estimations.";
+  $("t-year").textContent = md(curTotal);
+  $("t-sec").textContent = eur(curTotal*1e9/(365.25*86400));
+}
+function tick(){
+  const now = new Date(), jan = new Date(now.getFullYear(),0,1);
+  const perS = curTotal*1e9/(365.25*86400);
+  $("cnt").textContent = nf0.format(perS*(now-jan)/1000);
+  $("t-here").textContent = eur(perS*(performance.now()-arrival)/1000);
+}
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+setInterval(tick, reduce?1000:90);
+
+(function stars(){
+  const svg = $("starring"); let h = "";
+  const star = (cx,cy,r,fill,stroke) => { let pts=[]; for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rr=i%2?r*.42:r; pts.push((cx+rr*Math.cos(a)).toFixed(1)+","+(cy+rr*Math.sin(a)).toFixed(1)); } return '<polygon points="'+pts.join(" ")+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.6" stroke-linejoin="round"/>'; };
+  for(let i=0;i<12;i++){ const a=-Math.PI/2+i*Math.PI/6, x=100+70*Math.cos(a), y=100+70*Math.sin(a); const kept = i<2; h += star(x,y,15, kept?"var(--gold)":"none", kept?"var(--gold)":"var(--band-muted)"); }
+  h += '<text x="100" y="96" text-anchor="middle" font-family="Big Shoulders Display, sans-serif" font-weight="800" font-size="44" fill="var(--gold)">83 %</text><text x="100" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--band-muted)" letter-spacing="1">VERS LES ÉTATS-UNIS</text>';
+  svg.innerHTML = h;
+})();
+
+/* ---------- perspective ---------- */
+function renderPersp(){
+  const T = curTotal, st = strictTotal();
+  const cards = [
+    [eur(T*1e9/POP[state.region]), "par habitant et par an en "+(state.region==="eu"?"UE":"France")+", bébés compris."],
+    [nf0.format(T/0.542)+" ×", "les recettes 2025 de la taxe française sur les services numériques (542 M€)."],
+    [nf0.format(T/1.5)+" ×", "les dépenses annuelles de l'État français en logiciels extra-européens (au moins 1,5 Md€)."],
+    [nf0.format(T/1)+" ×", "le chiffre d'affaires visé en 2026 par Mistral AI, champion européen de l'IA (environ 1 Md€)."],
+    [nf0.format(st*US_JOBS_PER_MD/1000)+" k", "emplois soutenus aux États-Unis par la seule part cloud et logiciels, selon le ratio Asterès."]
+  ];
+  $("persp").innerHTML = cards.map(c=>'<div class="card"><b>'+c[0]+'</b><p>'+c[1]+'</p></div>').join("");
+}
+
+/* ---------- devinez ---------- */
+const GUESSES = [
+  {q:"Sur 100 € de cloud et de logiciels professionnels achetés par les entreprises européennes, combien vont à des acteurs américains ?",ans:83,unit:"€",start:50,src:"Asterès pour le Cigref, 2025.",msg:"Les Européens paient donc environ 5 € aux États-Unis pour 1 € dépensé chez eux."},
+  {q:"Quelle part du marché européen du cloud détiennent les fournisseurs européens (SAP, Deutsche Telekom, OVHcloud, Orange…) ?",ans:15,unit:"%",start:40,src:"Synergy Research. Cette part était de 29 % en 2017.",msg:"Leur chiffre d'affaires a triplé depuis 2017, mais le marché a grossi encore plus vite."}
+];
+function renderGuesses(){
+  $("guesses").innerHTML = GUESSES.map((g,i)=>'<div class="card guess"><q>'+esc(g.q)+'</q><div class="range-row"><input type="range" id="gs'+i+'" min="0" max="100" value="'+g.start+'" aria-label="Votre estimation"><span class="guess-val" id="gv'+i+'">'+g.start+'</span></div><button class="btn" id="gb'+i+'">Révéler la réponse</button><div class="reveal" id="gr'+i+'" hidden></div></div>').join("");
+  GUESSES.forEach((g,i)=>{
+    const s=$("gs"+i), v=$("gv"+i);
+    s.addEventListener("input",()=>{ v.textContent=s.value; });
+    $("gb"+i).addEventListener("click",()=>{
+      const you=+s.value, d=Math.abs(you-g.ans), r=$("gr"+i);
+      const verdict = d<=5 ? "Excellent, vous étiez très proche." : (you<g.ans ? "Vous avez sous-estimé de "+d+" points." : "Vous avez surestimé de "+d+" points.");
+      r.innerHTML = '<div class="cmp"><i class="you" style="width:'+you+'%"></i><i class="real" style="width:'+g.ans+'%"></i></div><div class="cmp-legend"><span>Vous : '+you+' '+g.unit+'</span><span style="color:var(--us);font-weight:600">Réalité : '+g.ans+' '+g.unit+'</span></div><p><b>'+verdict+'</b> '+esc(g.msg)+'</p><p class="small">Source : '+esc(g.src)+'</p>';
+      r.hidden=false; $("gb"+i).hidden=true;
+    });
+  });
+}
+
+/* ---------- catégories ---------- */
+function byCat(){ const m={}; active().forEach(p=>{ m[p.cat]=(m[p.cat]||0)+amt(p); }); return m; }
+function renderCats(){
+  const m=byCat(), T=curTotal;
+  $("stack").innerHTML = Object.keys(CATS).filter(k=>m[k]>0).map(k=>'<button style="flex:'+m[k]+' 1 0;background:var(--c-'+k+')" data-cat="'+k+'" title="'+esc(CATS[k].n)+' : '+md(m[k])+'"><span>'+esc(CATS[k].s)+' '+pct(m[k]/T*100)+'</span></button>').join("");
+  $("stack").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>goCat(b.dataset.cat)));
+  const allM = {}; PRODUCTS.forEach(p=>{ allM[p.cat]=(allM[p.cat]||0)+amt(p); });
+  $("cats").innerHTML = Object.keys(CATS).map(k=>{
+    const c=CATS[k], on = state.scope==="large" || c.p==="strict";
+    return '<div class="card cat'+(on?'':' off')+'"><div class="cat-top"><span style="display:flex;gap:8px;align-items:center"><i class="sw" style="background:var(--c-'+k+')"></i><h3>'+esc(c.n)+'</h3></span><span class="tag">'+esc(c.s)+'</span></div><div class="cat-amt">'+md(allM[k]||0)+'</div><p class="small">'+(on? pct((allM[k]||0)/T*100,1)+" du total affiché" : "Hors périmètre : activez le périmètre élargi")+'</p><p>'+esc(c.def)+'</p><p class="ex">Ex. : '+esc(c.ex)+'</p><p class="small"><b>Dépendance :</b> '+esc(c.us)+'</p>'+(on?'<button class="linkbtn" data-cat="'+k+'">Voir les produits</button>':'<button class="linkbtn" data-large="1">Activer le périmètre élargi</button>')+'</div>';
+  }).join("");
+  $("cats").querySelectorAll("[data-cat]").forEach(b=>b.addEventListener("click",()=>goCat(b.dataset.cat)));
+  $("cats").querySelectorAll("[data-large]").forEach(b=>b.addEventListener("click",()=>{ state.scope="large"; save(); renderAll(); }));
+}
+function goCat(k){ tmFilter=k; renderTreemap(); $("produits").scrollIntoView({behavior:reduce?"auto":"smooth"}); }
+
+/* ---------- sociétés ---------- */
+let coSel = null, coAll = false;
+function companies(){
+  const m={}; active().forEach(p=>{ const v=amt(p); if(!m[p.co]) m[p.co]={id:p.co,tot:0,cats:{},prods:[]}; m[p.co].tot+=v; m[p.co].cats[p.cat]=(m[p.co].cats[p.cat]||0)+v; m[p.co].prods.push(p); });
+  const arr = Object.values(m).filter(c=>c.tot>0);
+  arr.sort((a,b)=> (a.id==="longtail")-(b.id==="longtail") || b.tot-a.tot);
+  return arr;
+}
+function renderCompanies(){
+  const cos = companies(); const named = cos.filter(c=>c.id!=="longtail");
+  if(!coSel || !cos.find(c=>c.id===coSel)) coSel = named[0].id;
+  const max = named[0].tot;
+  const shown = coAll ? cos : cos.slice(0,12);
+  $("colist").innerHTML = shown.map((c,i)=>{
+    const lt = c.id==="longtail";
+    const segs = Object.keys(CATS).filter(k=>c.cats[k]).map(k=>'<i style="width:'+(c.cats[k]/c.tot*100)+'%;background:var(--c-'+k+')'+(lt?';opacity:.55':'')+'"></i>').join("");
+    return '<button class="co-row" aria-pressed="'+(c.id===coSel)+'" data-co="'+c.id+'"><span class="co-rank">'+(lt?"…":i+1)+'</span><span class="co-name">'+esc(CO[c.id].n)+'</span><span class="co-bar" style="width:'+Math.max(2,Math.min(100,c.tot/max*100))+'%">'+segs+'</span><span class="co-val">'+md(c.tot)+'</span></button>';
+  }).join("") + (cos.length>12 ? '<button class="btn ghost showall" id="coall">'+(coAll?"Afficher le top 12":"Afficher les "+cos.length+" lignes")+'</button>' : "");
+  $("colist").querySelectorAll("[data-co]").forEach(b=>b.addEventListener("click",()=>{ coSel=b.dataset.co; renderCompanies(); if(innerWidth<980) $("codetail").scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"}); }));
+  const ca=$("coall"); if(ca) ca.addEventListener("click",()=>{ coAll=!coAll; renderCompanies(); });
+  renderCoDetail(cos);
+}
+function renderCoDetail(cos){
+  const c = cos.find(x=>x.id===coSel), meta = CO[c.id], rank = cos.indexOf(c)+1;
+  const prods = c.prods.slice().sort((a,b)=>amt(b)-amt(a));
+  $("codetail").innerHTML =
+    '<div><p class="eyebrow">'+(c.id==="longtail"?"Hors classement":"N° "+rank+" · "+esc(meta.hq))+'</p><h3 style="font-size:30px;margin-top:4px">'+esc(meta.n)+'</h3></div>'+
+    '<div><div class="big">'+md(c.tot)+'</div><p class="small">par an depuis '+region()+', soit '+pct(c.tot/curTotal*100,1)+' du total affiché · '+eur(c.tot*1e9/POP[state.region])+' par habitant</p></div>'+
+    '<div class="plist">'+prods.map(p=>'<div class="prow"><i style="background:var(--c-'+p.cat+')"></i><span>'+esc(p.name)+'</span><span>'+md(amt(p))+'</span></div>').join("")+'</div>'+
+    '<p style="font-size:14.5px">'+esc(meta.note)+'</p>'+
+    '<div><p class="eyebrow" style="margin-bottom:6px">Risques</p><div class="chips">'+meta.risks.map(r=>'<span class="chip risk">'+esc(r)+'</span>').join("")+'</div></div>'+
+    '<div><p class="eyebrow" style="margin-bottom:6px">Alternatives européennes ou libres</p><div class="chips">'+meta.alts.map(r=>'<span class="chip alt">'+esc(r)+'</span>').join("")+'</div></div>';
+}
+
+/* ---------- treemap ---------- */
+let tmFilter = "all", tmSel = null;
+function squarify(items, r){
+  const out=[]; let row=[]; let x=r.x,y=r.y,w=r.w,h=r.h,i=0;
+  const worst=(rw,len)=>{ if(!rw.length) return Infinity; let s=0,mx=0,mn=Infinity; rw.forEach(it=>{s+=it.a;mx=Math.max(mx,it.a);mn=Math.min(mn,it.a);}); return Math.max(len*len*mx/(s*s),(s*s)/(len*len*mn)); };
+  const place=()=>{ const s=sum(row.map(it=>it.a)); if(w>=h){ const cw=s/h; let yy=y; row.forEach(it=>{ const ch=it.a/cw; out.push(Object.assign({},it,{x:x,y:yy,w:cw,h:ch})); yy+=ch; }); x+=cw; w=Math.max(0,w-cw); } else { const rh=s/w; let xx=x; row.forEach(it=>{ const cw=it.a/rh; out.push(Object.assign({},it,{x:xx,y:y,w:cw,h:rh})); xx+=cw; }); y+=rh; h=Math.max(0,h-rh); } row=[]; };
+  while(i<items.length){ const len=Math.min(w,h)||1, it=items[i]; if(!row.length || worst(row.concat([it]),len)<=worst(row,len)){ row.push(it); i++; } else place(); }
+  if(row.length) place();
+  return out;
+}
+function renderTmFilters(){
+  const m = byCat(); const keys = Object.keys(CATS).filter(k=>m[k]>0);
+  if(tmFilter!=="all" && !keys.includes(tmFilter)) tmFilter="all";
+  $("tmfilters").innerHTML = '<button class="fchip" data-f="all" aria-pressed="'+(tmFilter==="all")+'">Tout · '+md(curTotal)+'</button>'+keys.map(k=>'<button class="fchip" data-f="'+k+'" aria-pressed="'+(tmFilter===k)+'"><i style="background:var(--c-'+k+')"></i>'+esc(CATS[k].s)+' · '+md(m[k])+'</button>').join("");
+  $("tmfilters").querySelectorAll("[data-f]").forEach(b=>b.addEventListener("click",()=>{ tmFilter=b.dataset.f; renderTreemap(); }));
+}
+function renderTreemap(){
+  renderTmFilters();
+  const box=$("tm"), W=box.clientWidth, H=box.clientHeight;
+  let items = active().filter(p=>tmFilter==="all"||p.cat===tmFilter).map(p=>({p:p,v:amt(p)})).filter(it=>it.v>0).sort((a,b)=>b.v-a.v);
+  const S = sum(items.map(it=>it.v));
+  items.forEach(it=>{ it.a = it.v/S*W*H; });
+  if(!tmSel || !items.find(it=>it.p.id===tmSel)) tmSel = items.length ? items.find(it=>!it.p.lt)?.p.id ?? items[0].p.id : null;
+  const rects = squarify(items,{x:0,y:0,w:W,h:H});
+  box.innerHTML = rects.map(r=>{
+    const p=r.p, big=r.w>92&&r.h>52, mid=r.w>48&&r.h>24;
+    const inner = big ? '<span><span class="co">'+esc(CO[p.co].n)+'</span><b>'+esc(p.name)+'</b></span><em>'+md(r.v)+'</em>' : (mid?'<em>'+md(r.v)+'</em>':'');
+    return '<button class="tile'+(p.lt?' lt':'')+(p.id===tmSel?' sel':'')+'" data-id="'+p.id+'" style="left:'+r.x+'px;top:'+r.y+'px;width:'+r.w+'px;height:'+r.h+'px;background-color:var(--c-'+(p.lt?'lt':p.cat)+')" aria-label="'+esc(p.name)+', '+esc(CO[p.co].n)+', '+md(r.v)+'">'+inner+'</button>';
+  }).join("");
+  const tip=$("tip");
+  box.querySelectorAll(".tile").forEach(t=>{
+    const p = PRODUCTS.find(x=>x.id===+t.dataset.id);
+    t.addEventListener("click",()=>{ tmSel=p.id; box.querySelectorAll(".tile.sel").forEach(e=>e.classList.remove("sel")); t.classList.add("sel"); renderTmDetail(); });
+    t.addEventListener("mousemove",e=>{ tip.hidden=false; tip.innerHTML='<b>'+esc(p.name)+'</b><br>'+esc(CO[p.co].n)+' · '+esc(CATS[p.cat].s)+'<br>'+md(amt(p))+' par an'; const x=Math.min(e.clientX+14, innerWidth-tip.offsetWidth-8); tip.style.left=x+"px"; tip.style.top=(e.clientY+14)+"px"; });
+    t.addEventListener("mouseleave",()=>{ tip.hidden=true; });
+  });
+  renderTmDetail();
+}
+function renderTmDetail(){
+  const p = PRODUCTS.find(x=>x.id===tmSel), d=$("tmdetail");
+  if(!p){ d.innerHTML='<p class="small">Aucun produit dans cette sélection.</p>'; return; }
+  const v=amt(p);
+  d.innerHTML = '<div style="min-width:0"><p class="eyebrow">'+esc(CO[p.co].n)+' · '+esc(CATS[p.cat].n)+'</p><h3 style="margin:4px 0 6px">'+esc(p.name)+'</h3><p class="small">'+pct(v/curTotal*100,1)+' du total affiché · fiabilité '+(p.conf==="m"?"moyenne":"faible")+' · '+eur(v*1e9/POP[state.region])+' par habitant et par an</p><p style="margin-top:8px"><button class="linkbtn" id="tm-go">Voir la fiche '+esc(CO[p.co].n)+'</button></p></div><div class="big">'+md(v)+'</div>';
+  $("tm-go").addEventListener("click",()=>{ coSel=p.co; renderCompanies(); $("societes").scrollIntoView({behavior:reduce?"auto":"smooth"}); });
+}
+let rT; addEventListener("resize",()=>{ clearTimeout(rT); rT=setTimeout(renderTreemap,150); });
+
+/* ---------- table ---------- */
+let sortK="v", sortD=-1;
+(function(){
+  $("qcat").innerHTML = '<option value="all">Toutes les catégories</option>'+Object.keys(CATS).map(k=>'<option value="'+k+'">'+esc(CATS[k].n)+'</option>').join("");
+  $("q").addEventListener("input",renderTable); $("qcat").addEventListener("change",renderTable);
+  document.querySelectorAll("th[data-k]").forEach(th=>th.addEventListener("click",()=>{ const k=th.dataset.k; if(sortK===k) sortD*=-1; else { sortK=k; sortD = (k==="v"||k==="sh")?-1:1; } renderTable(); }));
+})();
+function renderTable(){
+  const q=$("q").value.trim().toLowerCase(), c=$("qcat").value;
+  let rows = active().map(p=>({p:p,name:p.name,co:CO[p.co].n,cat:CATS[p.cat].n,v:amt(p),sh:amt(p)/curTotal,conf:p.conf}));
+  rows = rows.filter(r=>(c==="all"||r.p.cat===c) && (!q || (r.name+" "+r.co+" "+r.cat).toLowerCase().includes(q)));
+  rows.sort((a,b)=>{ const x=a[sortK], y=b[sortK]; return (typeof x==="number" ? x-y : String(x).localeCompare(String(y),"fr"))*sortD; });
+  document.querySelectorAll("th[data-k]").forEach(th=>{ th.textContent = th.textContent.replace(/ [↑↓]$/,"") + (th.dataset.k===sortK?(sortD>0?" ↑":" ↓"):""); });
+  $("tbody").innerHTML = rows.length ? rows.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+esc(r.co)+'</td><td><span style="display:inline-flex;gap:6px;align-items:center"><i style="width:9px;height:9px;border-radius:2px;background:var(--c-'+r.p.cat+')"></i>'+esc(CATS[r.p.cat].s)+'</span></td><td class="r">'+md(r.v)+'</td><td class="r">'+pct(r.sh*100,1)+'</td><td><span class="conf">'+(r.conf==="m"?"moyenne":"faible")+'</span></td></tr>').join("") : '<tr><td colspan="6" class="small">Aucun résultat. Essayez un autre mot ou activez le périmètre élargi.</td></tr>';
+}
+
+/* ---------- simulateur ---------- */
+function niceMax(v){ const p=Math.pow(10,Math.floor(Math.log10(v))); const n=v/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
+function renderSim(){
+  const g=+$("g").value/100, tgt=+$("rl").value/100; $("go").textContent=pct(g*100); $("rlo").textContent=pct(tgt*100);
+  const base=strictTotal(), yrs=[]; for(let y=2026;y<=2035;y++) yrs.push(y);
+  const no=[], sc=[], kept=[];
+  yrs.forEach((y,i)=>{ const s=base*Math.pow(1+g,i), r=tgt*i/9; no.push(s); sc.push(s*(1-r)); kept.push(s*r); });
+  const svg=$("chart"), L=58,R=14,T=14,B=30,Wd=640-L-R,Hd=300-T-B, ymax=niceMax(Math.max(...no)*1.02);
+  const X=i=>L+i*Wd/(yrs.length-1), Y=v=>T+Hd-(v/ymax)*Hd;
+  let h='';
+  for(let k=0;k<=4;k++){ const v=ymax*k/4, y=Y(v); h+='<line x1="'+L+'" x2="'+(640-R)+'" y1="'+y+'" y2="'+y+'" stroke="var(--line)" stroke-width="1"/><text x="'+(L-8)+'" y="'+(y+4)+'" text-anchor="end" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--muted)">'+nf0.format(v)+'</text>'; }
+  h+='<text x="'+L+'" y="10" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">Md€ / an</text>';
+  yrs.forEach((y,i)=>{ if(i%(innerWidth<640?3:1)===0 || i===yrs.length-1) h+='<text x="'+X(i)+'" y="'+(300-10)+'" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--muted)">'+y+'</text>'; });
+  const line=a=>a.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(v).toFixed(1)).join("");
+  const area = line(no)+" "+sc.slice().reverse().map((v,j)=>"L"+X(sc.length-1-j).toFixed(1)+","+Y(v).toFixed(1)).join("")+"Z";
+  h+='<path d="'+area+'" fill="var(--gold)" fill-opacity=".35"/>';
+  h+='<path d="'+line(no)+'" fill="none" stroke="var(--us)" stroke-width="2.5"/>';
+  h+='<path d="'+line(sc)+'" fill="none" stroke="var(--eu)" stroke-width="2.5"/>';
+  const li=yrs.length-1; h+='<circle cx="'+X(li)+'" cy="'+Y(no[li])+'" r="4" fill="var(--us)"/><circle cx="'+X(li)+'" cy="'+Y(sc[li])+'" r="4" fill="var(--eu)"/>';
+  svg.innerHTML=h;
+  const cumKept=sum(kept), jobs=tgt*base*JOBS_PER_MD;
+  $("outs").innerHTML = [
+    [md(no[li]),"vers l'étranger en 2035 sans changement","var(--us)"],
+    [md(sc[li]),"en 2035 avec relocalisation","var(--eu)"],
+    [md(cumKept),"gardés en Europe, cumul 2026-2035","var(--gold)"],
+    [nf0.format(jobs/1000)+" k","emplois en Europe à terme (ratio Asterès, volume 2026)","var(--libre)"]
+  ].map(o=>'<div class="card out" style="border-left-color:'+o[2]+'"><b>'+o[0]+'</b><span>'+o[1]+'</span></div>').join("");
+}
+["g","rl"].forEach(id=>$(id).addEventListener("input",renderSim));
+document.querySelectorAll("[data-p]").forEach(b=>b.addEventListener("click",()=>{ const [a,c]=b.dataset.p.split(","); $("g").value=a; $("rl").value=c; renderSim(); }));
+
+/* ---------- organisation ---------- */
+function renderOrg(){
+  const ca=Math.max(0,+$("ca").value||0), emp=Math.max(1,+$("emp").value||1), it=+$("int").value/100, us=+$("us").value/100;
+  $("into").textContent=pct(it*100,1); $("uso").textContent=pct(us*100);
+  const spend=ca*1e6*it, toUS=spend*us, in5=toUS*Math.pow(1.1,5);
+  $("receipt").innerHTML =
+    '<p class="eyebrow">Relevé annuel estimé</p>'+
+    '<div class="ln"><span>Dépense cloud &amp; logiciels</span><b>'+eur(spend)+'</b></div>'+
+    '<div class="ln"><span>dont fournisseurs américains</span><b style="color:var(--us)">'+eur(toUS)+'</b></div>'+
+    '<div class="ln"><span>par salarié et par an</span><b>'+eur(toUS/emp)+'</b></div>'+
+    '<div class="ln"><span>par jour ouvré (220 j)</span><b>'+eur(toUS/220)+'</b></div>'+
+    '<div class="ln"><span>dans 5 ans à +10 %/an</span><b>'+eur(in5)+'</b></div>'+
+    '<div class="ln"><span>gardé en Europe si 20 % basculent</span><b style="color:var(--eu)">'+eur(toUS*.2)+'</b></div>'+
+    '<p class="eyebrow" style="margin-top:8px">Hausse cumulée sur 5 ans</p><div class="tot">+'+eur(in5-toUS)+'</div>'+
+    '<p class="small" style="font-family:var(--f-body)">C\'est ce que coûterait, en 2031, le simple maintien des mêmes outils si la hausse moyenne de 10 % par an se poursuivait.</p>';
+}
+["ca","emp","int","us"].forEach(id=>$(id).addEventListener("input",renderOrg));
+document.querySelectorAll("[data-i]").forEach(b=>b.addEventListener("click",()=>{ $("int").value=b.dataset.i; renderOrg(); }));
+
+/* ---------- empreinte ---------- */
+const ORIG = {US:{n:"États-Unis",c:"var(--us)"},UE:{n:"Union européenne",c:"var(--eu)"},EUR:{n:"Europe hors UE",c:"var(--ch)"},LIB:{n:"Logiciel libre",c:"var(--libre)"},AUT:{n:"Autre",c:"var(--other)"}};
+const TOOLS = [
+  {g:"E-mail",t:[["Gmail","US"],["Outlook / Exchange","US"],["Proton Mail (CH)","EUR"],["Infomaniak (CH)","EUR"],["Tuta (DE)","UE"],["Orange Mail (FR)","UE"]]},
+  {g:"Bureautique",t:[["Microsoft 365","US"],["Google Docs","US"],["Apple iWork","US"],["La Suite numérique (FR)","UE"],["OnlyOffice (LV)","UE"],["LibreOffice","LIB"],["Nextcloud (DE)","UE"]]},
+  {g:"Visioconférence",t:[["Teams","US"],["Zoom","US"],["Google Meet","US"],["Webex","US"],["Visio de l'État (FR)","UE"],["Tixeo (FR)","UE"],["Jitsi","LIB"]]},
+  {g:"Stockage de fichiers",t:[["OneDrive","US"],["Google Drive","US"],["iCloud","US"],["Dropbox","US"],["kDrive (CH)","EUR"],["pCloud (CH)","EUR"]]},
+  {g:"Messagerie instantanée",t:[["WhatsApp","US"],["Messenger","US"],["iMessage","US"],["Signal","US"],["Telegram","AUT"],["Olvid (FR)","UE"],["Threema (CH)","EUR"],["Tchap (FR)","UE"]]},
+  {g:"Recherche web",t:[["Google","US"],["Bing","US"],["DuckDuckGo","US"],["Qwant (FR)","UE"],["Ecosia (DE)","UE"]]},
+  {g:"Assistant IA",t:[["ChatGPT","US"],["Claude","US"],["Gemini","US"],["Copilot","US"],["Perplexity","US"],["Le Chat de Mistral (FR)","UE"]]},
+  {g:"Système",t:[["Windows","US"],["macOS","US"],["iOS","US"],["Android","US"],["Linux","LIB"],["/e/OS (FR)","UE"]]},
+  {g:"Hébergement pro",t:[["AWS","US"],["Azure","US"],["Google Cloud","US"],["Oracle Cloud","US"],["OVHcloud (FR)","UE"],["Scaleway (FR)","UE"],["Outscale (FR)","UE"],["Hetzner (DE)","UE"],["IONOS (DE)","UE"]]}
+];
+const fpSel = new Set(["Outlook / Exchange","Microsoft 365","Teams","OneDrive","WhatsApp","Google","ChatGPT","Windows","Android","AWS"]);
+let fpCut=false, fpTouched=false;
+function renderFp(){
+  $("fpgroups").innerHTML = TOOLS.map(G=>'<div class="card fp-g"><h4>'+esc(G.g)+'</h4><div class="chips">'+G.t.map(t=>'<button class="tool'+(fpCut&&t[1]==="US"&&fpSel.has(t[0])?' cut':'')+'" aria-pressed="'+fpSel.has(t[0])+'" data-t="'+esc(t[0])+'"><i style="background:'+ORIG[t[1]].c+'"></i>'+esc(t[0])+'</button>').join("")+'</div></div>').join("");
+  $("fpgroups").querySelectorAll("[data-t]").forEach(b=>b.addEventListener("click",()=>{ const n=b.dataset.t; fpSel.has(n)?fpSel.delete(n):fpSel.add(n); fpTouched=true; renderFp(); }));
+  const all=[]; TOOLS.forEach(G=>G.t.forEach(t=>{ if(fpSel.has(t[0])) all.push({n:t[0],o:t[1],g:G}); }));
+  const cnt={}; Object.keys(ORIG).forEach(k=>cnt[k]=0); all.forEach(a=>cnt[a.o]++);
+  const n=all.length, usN=cnt.US, sh=n?usN/n*100:0;
+  const groupsUS = TOOLS.filter(G=>G.t.some(t=>t[1]==="US"&&fpSel.has(t[0])));
+  const groupsDead = TOOLS.filter(G=>{ const mine=G.t.filter(t=>fpSel.has(t[0])); return mine.length && mine.every(t=>t[1]==="US"); });
+  $("fpres").innerHTML =
+    '<p class="eyebrow">'+(fpTouched?"Votre sélection":"Exemple pré-rempli · cliquez pour modifier")+'</p>'+
+    '<div><div class="big" style="color:var(--us)">'+pct(sh)+'</div><p class="small">de vos '+n+' outils dépendent d\'un fournisseur américain</p></div>'+
+    '<div class="gauge">'+Object.keys(ORIG).map(k=>cnt[k]?'<i style="width:'+(cnt[k]/n*100)+'%;background:'+ORIG[k].c+'"></i>':'').join("")+'</div>'+
+    '<div class="keys">'+Object.keys(ORIG).map(k=>'<span><i style="background:'+ORIG[k].c+'"></i>'+ORIG[k].n+' ('+cnt[k]+')</span>').join("")+'</div>'+
+    '<button class="btn kill" id="kill">'+(fpCut?"Rétablir les services":"Simuler une coupure américaine")+'</button>'+
+    (fpCut ? '<p style="font-size:15px"><b>'+usN+' outil'+(usN>1?'s':'')+' sur '+n+' s\'arrête'+(usN>1?'nt':'')+'.</b> '+(groupsDead.length?'Vous perdez complètement : '+groupsDead.map(G=>G.g.toLowerCase()).join(", ")+'.':'Il vous reste au moins un outil dans chaque usage.')+' Le précédent existe : un juge de la Cour pénale internationale a été privé de ses outils numériques et de ses moyens de paiement après des sanctions américaines.</p>' : '')+
+    (groupsUS.length ? '<div class="alts"><p class="eyebrow">Alternatives à essayer</p>'+groupsUS.map(G=>'<div><s>'+esc(G.t.filter(t=>t[1]==="US"&&fpSel.has(t[0])).map(t=>t[0]).join(", "))+'</s> → '+esc(G.t.filter(t=>t[1]!=="US"&&t[1]!=="AUT").map(t=>t[0]).join(", "))+'</div>').join("")+'</div>' : '<p>Aucun outil américain sélectionné.</p>')+
+    '<p class="small">Une même entreprise européenne peut héberger ses services chez un fournisseur américain : l\'origine affichée est celle de l\'éditeur.</p>';
+  $("kill").addEventListener("click",()=>{ fpCut=!fpCut; renderFp(); });
+}
+
+/* ---------- quiz ---------- */
+const QUIZ = [
+  {q:"Combien l'État français dépense-t-il au minimum chaque année en logiciels extra-européens ?",o:["150 M€","1,5 Md€","15 Md€","150 Md€"],a:1,e:"Au moins 1,5 Md€ selon la commission d'enquête de l'Assemblée nationale (juillet 2026), dont 1 Md€ pourrait basculer vers le logiciel libre dès aujourd'hui."},
+  {q:"Quelle hausse annuelle moyenne des prix du cloud et des logiciels américains les DSI interrogés par Asterès constatent-ils ?",o:["Environ 2 %","Environ 5 %","Environ 10 %","Environ 25 %"],a:2,e:"Environ 10 % par an. À ce rythme, les 264 Md€ deviendraient plus de 500 Md€ en dix ans."},
+  {q:"Combien la Gendarmerie nationale a-t-elle économisé depuis 2004 en passant ses postes sous Linux ?",o:["53 M€","534 M€","5,3 Md€","Rien, elle est revenue à Windows"],a:1,e:"534 M€ d'économies selon le rapport de l'Assemblée nationale, qui cite la Gendarmerie en exemple."},
+  {q:"Quelle hausse de prix certains fournisseurs cloud européens rapportent-ils sur VMware depuis son rachat par Broadcom ?",o:["+30 %","+100 %","Plus de 1 000 %","Aucune, les prix ont baissé"],a:2,e:"Le CISPE évoque des hausses cumulées de plus de 1 000 % et a déposé une plainte auprès de la Commission européenne."},
+  {q:"La puissance déjà réservée pour des projets de datacenters en France (15 GW) équivaut à quelle part du parc nucléaire ?",o:["2 %","9 %","24 %","60 %"],a:2,e:"24 %, et moins de 10 % de cette capacité profite à des acteurs français selon la commission d'enquête."},
+  {q:"Au second semestre 2025, quelle part des demandes de divulgation de données des autorités Microsoft a-t-il satisfaites ?",o:["Aucune","Environ 25 %","Environ 75 %","100 %"],a:2,e:"Environ 75 % des 5 587 demandes, avec transmission reconnue de données de deux entreprises européennes au titre du Cloud Act."},
+  {q:"Selon Asterès, combien d'emplois créerait en Europe la réorientation de 5 % des achats de cloud et logiciels vers des fournisseurs européens ?",o:["Environ 18 000","Environ 178 000","Environ 1,8 million","Aucun, ce sont des services automatisés"],a:1,e:"Environ 178 000 emplois, en comptant les effets directs, indirects et induits."}
+];
+let qi=0, qscore=0, qanswered=false;
+function renderQuiz(){
+  const box=$("quizbox");
+  const prog='<div class="qprog">'+QUIZ.map((_,i)=>'<i class="'+(i<qi||(i===qi&&qanswered)?'done':'')+'"></i>').join("")+'</div>';
+  if(qi>=QUIZ.length){
+    const msg = qscore>=6?"Vous maîtrisez le sujet.":qscore>=4?"Bonne base, quelques chiffres surprenants en route.":"Ces chiffres surprennent presque tout le monde.";
+    box.innerHTML=prog+'<p class="eyebrow">Résultat</p><div style="font-family:var(--f-display);font-size:72px;font-weight:800;line-height:1">'+qscore+' / '+QUIZ.length+'</div><p>'+msg+'</p><button class="btn" id="qre">Recommencer</button>';
+    $("qre").addEventListener("click",()=>{ qi=0;qscore=0;qanswered=false; renderQuiz(); }); return;
+  }
+  const Q=QUIZ[qi];
+  box.innerHTML=prog+'<p class="eyebrow">Question '+(qi+1)+' sur '+QUIZ.length+' · score '+qscore+'</p><h3 style="font-size:26px;text-transform:none;letter-spacing:0">'+esc(Q.q)+'</h3><div class="qopts">'+Q.o.map((o,i)=>'<button class="qopt" data-i="'+i+'">'+esc(o)+'</button>').join("")+'</div><div id="qfb"></div>';
+  box.querySelectorAll(".qopt").forEach(b=>b.addEventListener("click",()=>{
+    if(qanswered) return; qanswered=true; const i=+b.dataset.i; if(i===Q.a) qscore++;
+    box.querySelectorAll(".qopt").forEach(x=>{ x.disabled=true; const j=+x.dataset.i; if(j===Q.a) x.classList.add("ok"); else if(j===i) x.classList.add("ko"); });
+    $("qfb").innerHTML='<p class="qexp"><b>'+(i===Q.a?"Exact.":"Pas tout à fait.")+'</b> '+esc(Q.e)+'</p><button class="btn" id="qnext" style="margin-top:12px">'+(qi===QUIZ.length-1?"Voir mon score":"Question suivante")+'</button>';
+    box.querySelector(".qprog").children[qi].classList.add("done");
+    $("qnext").addEventListener("click",()=>{ qi++; qanswered=false; renderQuiz(); });
+  }));
+}
+
+/* ---------- glossaire ---------- */
+const GLO = [
+  ["IaaS, PaaS, SaaS","Trois étages du cloud. IaaS : vous louez des machines. PaaS : vous louez des briques logicielles prêtes (bases de données, conteneurs). SaaS : vous louez l'application finie. Plus on monte, moins on gère, et plus il est difficile de partir."],
+  ["Hyperscaler","Fournisseur de cloud à l'échelle mondiale, capable d'investir des centaines de milliards par an : Amazon, Microsoft et Google. Leurs budgets d'infrastructure IA dépassent 600 Md$ cumulés sur l'exercice 2026."],
+  ["Cloud Act","Loi américaine de 2018 qui permet aux autorités des États-Unis d'exiger d'une entreprise américaine les données qu'elle contrôle, même stockées à Francfort ou Paris."],
+  ["FISA, section 702","Disposition américaine qui autorise la surveillance de communications de personnes non américaines par les services de renseignement, via les fournisseurs de services."],
+  ["SecNumCloud","Qualification de l'ANSSI pour les offres cloud de confiance. Sa version 3.2 exige une immunité aux lois extra-européennes, ce qui exclut un contrôle américain du fournisseur."],
+  ["Verrouillage (lock-in)","Situation où changer de fournisseur coûte si cher (formats, compétences, réécriture, frais de sortie) que le client accepte les hausses de prix. Le cas VMware en est l'illustration."],
+  ["Frais de sortie (egress)","Ce que facture un cloud pour récupérer vos propres données. Ils rendent le départ coûteux et dissuadent l'usage de plusieurs clouds à la fois."],
+  ["Kill switch","Coupure à distance de services numériques par un État, par exemple via des sanctions ou des contrôles à l'export. Jugé désormais « pas improbable » par la commission d'enquête de l'Assemblée."],
+  ["Token","Unité de texte facturée par les modèles d'IA, environ trois quarts de mot. Les prix s'expriment en dollars par million de tokens en entrée et en sortie."],
+  ["Cloud de confiance hybride","Offres comme Bleu (Orange et Capgemini avec Microsoft) ou S3NS (Thales avec Google) : technologie américaine opérée par une société européenne. Elles réduisent l'exposition juridique, pas la dépendance technologique."],
+  ["Longue traîne","Les milliers d'éditeurs plus petits qui, additionnés, pèsent autant que les géants. Elle est difficile à mesurer et c'est la principale source d'incertitude de ce compteur."],
+  ["Préférence européenne","Principe défendu par le gouvernement français dans sa feuille de route de janvier 2026 : privilégier les solutions françaises et européennes dans les achats publics et inciter les entreprises à faire de même."]
+];
+$("glo").innerHTML = GLO.map(g=>'<details><summary>'+esc(g[0])+'</summary><p>'+esc(g[1])+'</p></details>').join("");
+
+/* ---------- rendu ---------- */
+function renderAll(){
+  syncCtrls(); renderHero(); tick(); renderPersp(); renderCats(); renderCompanies(); renderTreemap(); renderTable(); renderSim();
+}
+buildProducts(); renderGuesses(); renderAll(); renderOrg(); renderFp(); renderQuiz();
+})();
+</script>
+
+</body>
+</html>
