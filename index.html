@@ -18,6 +18,7 @@
   --c-iaas:#2F5BEA; --c-paas:#0B8F9B; --c-saas:#7343D2; --c-lic:#B94E14; --c-ia:#C42A66;
   --c-puces:#2C8454; --c-mat:#7E5F44; --c-pub:#A87700; --c-gp:#56647E; --c-lt:#8C93A6;
   --tile-ink:#FFFFFF;
+  --fr-navy:#0A1748; --fr-navy-2:#06102F; --fr-blue:#2F55E4; --fr-white:#FFFFFF; --fr-red:#E1000F; --fr-muted:#C2CAEB;
   --f-display:"Big Shoulders Display","Oswald","Arial Narrow",Impact,sans-serif;
   --f-body:"Libre Franklin","Segoe UI",system-ui,-apple-system,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
@@ -86,6 +87,14 @@ a{color:var(--eu)}
 .stars svg{width:100%;max-width:200px;height:auto}
 .stars p{font-size:13px;color:var(--band-muted);margin-top:6px}
 .stars p b{color:var(--gold)}
+.hero{transition:background-color .3s}
+.hero[data-r="fr"]{--band:var(--fr-navy);--band-2:var(--fr-navy-2);--band-muted:var(--fr-muted)}
+.hero[data-r="fr"]::before,.hero[data-r="fr"]::after{content:"";position:absolute;left:0;right:0;height:10px;background:linear-gradient(90deg,var(--fr-blue) 0 33.34%,var(--fr-white) 33.34% 66.67%,var(--fr-red) 66.67%)}
+.hero[data-r="fr"]::before{top:0}
+.hero[data-r="fr"]::after{bottom:0}
+.hero[data-r="fr"] .counter{color:var(--fr-white)}
+.hero[data-r="fr"] .counter small{color:var(--fr-red)}
+.hero[data-r="fr"] .stars p b{color:var(--fr-white)}
 
 /* sections */
 .sec{padding-block:56px;border-bottom:1px solid var(--line)}
@@ -282,8 +291,8 @@ footer{padding-block:28px;font-size:13px;color:var(--muted)}
     <div class="brand"><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="var(--band)"/><text x="13" y="18" text-anchor="middle" font-size="14" font-weight="800" fill="var(--gold)" font-family="Big Shoulders Display, sans-serif">€</text></svg>Compteur de dépendance</div>
     <div class="ctrls">
       <div class="seg" role="group" aria-label="Territoire">
-        <button id="r-eu" data-set="region" data-v="eu">Union européenne</button>
         <button id="r-fr" data-set="region" data-v="fr">France</button>
+        <button id="r-eu" data-set="region" data-v="eu">Union européenne</button>
       </div>
       <div class="seg" role="group" aria-label="Périmètre">
         <button id="s-strict" data-set="scope" data-v="strict" title="Cloud, logiciels et IA à usage professionnel">Cloud &amp; logiciels</button>
@@ -300,10 +309,10 @@ footer{padding-block:28px;font-size:13px;color:var(--muted)}
   </div></nav>
 </header>
 
-<section class="hero" aria-labelledby="h1">
+<section class="hero" data-r="fr" aria-labelledby="h1">
   <div class="wrap">
     <div style="min-width:0">
-      <p class="eyebrow" id="hero-eyebrow">Union européenne · depuis le 1er janvier 2026 · estimation</p>
+      <p class="eyebrow" id="hero-eyebrow">France · depuis le 1er janvier 2026 · estimation</p>
       <h1 id="h1" class="counter num" aria-live="off"><span id="cnt">0</span><small>€</small></h1>
       <p class="hero-line" id="hero-line"></p>
       <div class="trio">
@@ -314,7 +323,7 @@ footer{padding-block:28px;font-size:13px;color:var(--muted)}
     </div>
     <div class="stars">
       <svg viewBox="0 0 200 200" id="starring" role="img" aria-label="Douze étoiles du drapeau européen, dix sont vides"></svg>
-      <p>Sur 100 € de cloud et de logiciels pro achetés en Europe, <b>83 €</b> vont à des acteurs américains. Soit <b>10 étoiles sur 12</b>.</p>
+      <p id="emblem-cap">Sur 100 € de cloud et de logiciels pro achetés en Europe, <b>83 €</b> vont à des acteurs américains.</p>
     </div>
   </div>
 </section>
@@ -638,9 +647,9 @@ const JOBS_PER_MD = 13500;   // 178 000 emplois pour 5 % de 264 Md€
 const US_JOBS_PER_MD = 1.9e6/264;
 
 /* ---------- état ---------- */
-let state = {region:"eu",scope:"strict",method:"cigref"};
-try{ const s = JSON.parse(localStorage.getItem("cdn-state")||"{}"); ["region","scope","method"].forEach(k=>{ if(s[k]) state[k]=s[k]; }); }catch(e){}
-function save(){ try{ localStorage.setItem("cdn-state",JSON.stringify(state)); }catch(e){} }
+let state = {region:"fr",scope:"strict",method:"cigref"};
+try{ const s = JSON.parse(localStorage.getItem("cdn-state-v2")||"{}"); ["region","scope","method"].forEach(k=>{ if(s[k]) state[k]=s[k]; }); }catch(e){}
+function save(){ try{ localStorage.setItem("cdn-state-v2",JSON.stringify(state)); }catch(e){} }
 
 let PRODUCTS = [];
 function buildProducts(){
@@ -686,6 +695,8 @@ function renderHero(){
   $("hero-line").innerHTML = "versés par les organisations et les habitants de "+region()+" à des fournisseurs extra-européens, surtout américains, "+what+". Soit <strong>"+md(curTotal)+" par an</strong> selon nos estimations.";
   $("t-year").textContent = md(curTotal);
   $("t-sec").textContent = eur(curTotal*1e9/(365.25*86400));
+  document.querySelector(".hero").dataset.r = state.region;
+  drawEmblem();
 }
 function tick(){
   const now = new Date(), jan = new Date(now.getFullYear(),0,1);
@@ -696,13 +707,23 @@ function tick(){
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 setInterval(tick, reduce?1000:90);
 
-(function stars(){
+function drawEmblem(){
   const svg = $("starring"); let h = "";
+  if(state.region==="fr"){
+    h += '<defs><clipPath id="flag"><rect x="28" y="20" width="144" height="96" rx="6"/></clipPath></defs><g clip-path="url(#flag)"><rect x="28" y="20" width="48" height="96" fill="var(--fr-blue)"/><rect x="76" y="20" width="48" height="96" fill="var(--fr-white)"/><rect x="124" y="20" width="48" height="96" fill="var(--fr-red)"/></g>';
+    h += '<text x="100" y="166" text-anchor="middle" font-family="Big Shoulders Display, sans-serif" font-weight="800" font-size="46" fill="var(--fr-white)">83 %</text><text x="100" y="188" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--band-muted)" letter-spacing="1">VERS LES ÉTATS-UNIS</text>';
+    svg.innerHTML = h;
+    svg.setAttribute("aria-label","Drapeau français, 83 % des dépenses vont vers les États-Unis");
+    $("emblem-cap").innerHTML = "Sur 100 € de cloud et de logiciels pro achetés en Europe, <b>83 €</b> vont à des acteurs américains. En France, c'est environ <b>54 Md€ sur 66 Md€</b> (Cigref).";
+    return;
+  }
   const star = (cx,cy,r,fill,stroke) => { let pts=[]; for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rr=i%2?r*.42:r; pts.push((cx+rr*Math.cos(a)).toFixed(1)+","+(cy+rr*Math.sin(a)).toFixed(1)); } return '<polygon points="'+pts.join(" ")+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.6" stroke-linejoin="round"/>'; };
   for(let i=0;i<12;i++){ const a=-Math.PI/2+i*Math.PI/6, x=100+70*Math.cos(a), y=100+70*Math.sin(a); const kept = i<2; h += star(x,y,15, kept?"var(--gold)":"none", kept?"var(--gold)":"var(--band-muted)"); }
   h += '<text x="100" y="96" text-anchor="middle" font-family="Big Shoulders Display, sans-serif" font-weight="800" font-size="44" fill="var(--gold)">83 %</text><text x="100" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--band-muted)" letter-spacing="1">VERS LES ÉTATS-UNIS</text>';
   svg.innerHTML = h;
-})();
+  svg.setAttribute("aria-label","Douze étoiles du drapeau européen, dix sont vides");
+  $("emblem-cap").innerHTML = "Sur 100 € de cloud et de logiciels pro achetés en Europe, <b>83 €</b> vont à des acteurs américains. Soit <b>10 étoiles sur 12</b>.";
+}
 
 /* ---------- perspective ---------- */
 function renderPersp(){
