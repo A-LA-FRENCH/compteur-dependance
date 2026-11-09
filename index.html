@@ -281,6 +281,44 @@ footer{padding-block:28px;font-size:13px;color:var(--muted)}
   .brand{font-size:19px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* pop-up Digital Resilience Europe : univers unique, sombre et vert, dans les deux thèmes */
+:root{ --dre-bg:#070B09; --dre-panel:#0C1410; --dre-line:#1F3A2B; --dre-green:#39F58A; --dre-green-dim:#1E8F52; --dre-ink:#E9F5EE; --dre-muted:#93AA9C; --dre-shade:rgba(3,8,6,.72) }
+.dre-back{position:fixed;inset:0;z-index:60;background:var(--dre-shade);backdrop-filter:blur(3px);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));opacity:0;transition:opacity .25s}
+.dre-back.on{opacity:1}
+.dre{position:relative;width:100%;max-width:520px;background:var(--dre-bg);color:var(--dre-ink);border:1px solid var(--dre-line);border-radius:4px;overflow:hidden;font-family:var(--f-body);box-shadow:0 0 0 1px rgba(57,245,138,.06),0 30px 80px rgba(0,0,0,.55),0 0 60px rgba(57,245,138,.12);transform:translateY(14px);transition:transform .3s}
+.dre-back.on .dre{transform:none}
+.dre::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(var(--dre-line) 1px,transparent 1px),linear-gradient(90deg,var(--dre-line) 1px,transparent 1px);background-size:28px 28px;opacity:.35;mask-image:linear-gradient(160deg,#000 0%,transparent 55%);-webkit-mask-image:linear-gradient(160deg,#000 0%,transparent 55%)}
+.dre-scan{height:3px;background:linear-gradient(90deg,transparent,var(--dre-green) 30%,var(--dre-green) 70%,transparent);box-shadow:0 0 18px var(--dre-green)}
+.dre-in{position:relative;padding:22px 24px 24px;display:grid;gap:16px}
+.dre .dre-sys{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.14em;color:var(--dre-green);display:flex;align-items:center;gap:8px;padding-right:36px}
+.dre-sys i{width:7px;height:7px;border-radius:50%;background:var(--dre-green);box-shadow:0 0 10px var(--dre-green);animation:drePulse 1.6s infinite}
+@keyframes drePulse{50%{opacity:.25}}
+.dre h2{font-family:var(--f-display);font-size:clamp(30px,6vw,40px);line-height:1;text-transform:uppercase;color:var(--dre-ink)}
+.dre h2 em{font-style:normal;color:var(--dre-green)}
+.dre p{color:var(--dre-muted);font-size:15.5px;line-height:1.5}
+.dre p b{color:var(--dre-ink)}
+.dre-code{display:flex;align-items:stretch;border:1px dashed var(--dre-green-dim);border-radius:3px;background:var(--dre-panel)}
+.dre-code span{flex:1;min-width:0;font-family:var(--f-mono);font-size:24px;font-weight:500;letter-spacing:.18em;color:var(--dre-green);padding:10px 14px;user-select:all}
+.dre-code button{border:0;border-left:1px dashed var(--dre-green-dim);background:transparent;color:var(--dre-ink);font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:0 14px}
+.dre-code button:hover{background:rgba(57,245,138,.08)}
+.dre-cta{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.dre-go{display:inline-flex;align-items:center;gap:10px;background:var(--dre-green);color:var(--dre-bg);text-decoration:none;font-family:var(--f-mono);font-weight:500;font-size:13px;letter-spacing:.1em;text-transform:uppercase;padding:12px 18px;border-radius:2px;box-shadow:0 0 22px rgba(57,245,138,.35)}
+.dre-go:hover{filter:brightness(1.08)}
+.dre-url{font-family:var(--f-mono);font-size:12.5px;color:var(--dre-muted)}
+.dre-url a{color:var(--dre-green)}
+.dre .dre-meta{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dre-muted);border-top:1px solid var(--dre-line);padding-top:12px;display:flex;flex-wrap:wrap;gap:4px 14px}
+.dre-x{position:absolute;top:14px;right:14px;z-index:1;width:32px;height:32px;border:1px solid var(--dre-line);background:var(--dre-panel);color:var(--dre-ink);border-radius:2px;font-size:18px;line-height:1;display:grid;place-items:center}
+.dre-x:hover{border-color:var(--dre-green)}
+.dre :focus-visible{outline:2px solid var(--dre-green);outline-offset:2px}
+@media (max-width:640px){
+  .dre-back{place-items:end center;padding:0}
+  .dre{max-width:none;border-radius:6px 6px 0 0;border-bottom:0}
+  .dre-in{padding:20px max(18px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
+  .dre-code span{font-size:20px}
+  .dre .dre-sys{font-size:10.5px;letter-spacing:.1em}
+}
+@media (prefers-reduced-motion:reduce){.dre-sys i{animation:none}}
 </style>
 <style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
@@ -518,6 +556,24 @@ footer{padding-block:28px;font-size:13px;color:var(--muted)}
 <footer><div class="wrap">Estimations indépendantes à visée pédagogique, mises à jour en novembre 2026. Elles ne remplacent pas une étude statistique officielle. Les montants sont en euros courants, hors TVA.</div></footer>
 
 <div class="tip" id="tip" hidden></div>
+<div class="dre-back" id="dre" hidden>
+  <div class="dre" role="dialog" aria-modal="true" aria-labelledby="dre-t" aria-describedby="dre-d">
+    <div class="dre-scan"></div>
+    <button class="dre-x" id="dre-x" aria-label="Fermer">×</button>
+    <div class="dre-in">
+      <p class="dre-sys"><i></i>SYS.INIT — DÉC 02/03 — PARIS</p>
+      <h2 id="dre-t">La souveraineté numérique <em>vous intéresse&nbsp;?</em></h2>
+      <p id="dre-d">Avec le code <b>ALAFRENCH</b>, recevez votre <b>billet invité</b> pour <b>Digital Resilience Europe</b>, les 2 et 3 décembre.</p>
+      <div class="dre-code"><span id="dre-code">ALAFRENCH</span><button id="dre-copy">Copier</button></div>
+      <div class="dre-cta">
+        <a class="dre-go" id="dre-go" href="https://digitalresilienceeurope.org" target="_blank" rel="noopener">Obtenir mon billet <span aria-hidden="true">→</span></a>
+        <span class="dre-url"><a href="https://digitalresilienceeurope.org" target="_blank" rel="noopener">digitalresilienceeurope.org</a></span>
+      </div>
+      <p class="dre-meta"><span>CNIT La Défense, Paris</span><span>Stop renting Europe's future. Build it.</span></p>
+    </div>
+  </div>
+</div>
+
 
 <script>
 (function(){
@@ -1007,6 +1063,44 @@ function renderAll(){
   syncCtrls(); renderHero(); tick(); renderPersp(); renderCats(); renderCompanies(); renderTreemap(); renderTable(); renderSim();
 }
 buildProducts(); renderGuesses(); renderAll(); renderOrg(); renderFp(); renderQuiz();
+
+/* ---------- pop-up Digital Resilience Europe ---------- */
+(function(){
+  const box=$("dre"); let shown=false, lastFocus=null;
+  try{ if(sessionStorage.getItem("dre-seen")) shown=true; }catch(e){}
+  function open(){
+    if(shown) return; shown=true;
+    try{ sessionStorage.setItem("dre-seen","1"); }catch(e){}
+    lastFocus=document.activeElement; box.hidden=false;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>box.classList.add("on")));
+    setTimeout(()=>$("dre-go").focus(),60);
+    document.addEventListener("keydown",onKey);
+    removeEventListener("scroll",onScroll);
+  }
+  function close(){
+    box.classList.remove("on"); document.removeEventListener("keydown",onKey);
+    setTimeout(()=>{ box.hidden=true; },250);
+    if(lastFocus&&lastFocus.focus) lastFocus.focus();
+  }
+  function onKey(e){
+    if(e.key==="Escape") close();
+    if(e.key==="Tab"){ const f=[...box.querySelectorAll("a,button")]; const a=f[0], z=f[f.length-1];
+      if(e.shiftKey&&document.activeElement===a){ e.preventDefault(); z.focus(); }
+      else if(!e.shiftKey&&document.activeElement===z){ e.preventDefault(); a.focus(); } }
+  }
+  function onScroll(){
+    const d=document.documentElement, max=d.scrollHeight-innerHeight;
+    if(max>0 && scrollY/max>=0.75) open();
+  }
+  $("dre-x").addEventListener("click",close);
+  box.addEventListener("click",e=>{ if(e.target===box) close(); });
+  $("dre-copy").addEventListener("click",()=>{
+    const b=$("dre-copy"), done=()=>{ b.textContent="Copié ✓"; setTimeout(()=>{ b.textContent="Copier"; },1800); };
+    const sel=()=>{ const r=document.createRange(); r.selectNodeContents($("dre-code")); const s=getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent="Sélectionné"; };
+    try{ navigator.clipboard.writeText("ALAFRENCH").then(done,sel); }catch(e){ sel(); }
+  });
+  if(!shown){ setTimeout(open,30000); addEventListener("scroll",onScroll,{passive:true}); }
+})();
 })();
 </script>
 
